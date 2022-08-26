@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include "math_pow.c"
+#include "math_log.c"
 
 #ifndef DBL_EPSILON
 #define DBL_EPSILON 2.22044604925031308085e-16
@@ -82,8 +83,6 @@ double fabs(double x) {
 }
 
 double ldexp(double x, int n) { return scalbn(x, n); }
-
-double log(double x) { return 0; }
 
 double log2(double x) { return 0; }
 
