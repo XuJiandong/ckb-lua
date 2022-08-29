@@ -16,9 +16,13 @@ all:
 	$(call run, literals.lua)
 	$(call run, sort.lua)
 	$(call run, strings.lua)
+	$(call run, math.lua)
 
 ci:
 	$(call run_ci, locals.lua)
 	$(call run_ci, literals.lua)
 	$(call run_ci, sort.lua)
 	$(call run_ci, strings.lua)
+
+math:
+	$(call run, math.lua)
