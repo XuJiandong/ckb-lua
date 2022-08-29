@@ -162,7 +162,7 @@ assert(minint // (minint + 1) == 1)
 assert(minint // 1 == minint)
 
 assert(minint // -1 == -minint)
--- assert(minint // -2 == 2^(intbits - 2))
+assert(minint // -2 == 2^(intbits - 2))
 assert(maxint // -1 == -maxint)
 
 
@@ -595,20 +595,19 @@ for i = 0, 10 do
   end
 end
 
--- TODO: error CyclesExceeded
--- do    -- precision of module for large numbers
---   local i = 10
---   while (1 << i) > 0 do
---     assert((1 << i) % 3 == i % 2 + 1)
---     i = i + 1
---   end
--- 
---   i = 10
---   while 2^i < math.huge do
---     assert(2^i % 3 == i % 2 + 1)
---     i = i + 1
---   end
--- end
+do    -- precision of module for large numbers
+  local i = 10
+  while (1 << i) > 0 do
+    assert((1 << i) % 3 == i % 2 + 1)
+    i = i + 1
+  end
+
+  i = 10
+  while 2^i < math.huge do
+    assert(2^i % 3 == i % 2 + 1)
+    i = i + 1
+  end
+end
 
 assert(eqT(minint % minint, 0))
 assert(eqT(maxint % maxint, 0))
@@ -804,93 +803,93 @@ do
   assert(a3 == a5)
 end
 
--- TODO: add tests for random functions
--- print("testing 'math.random'")
--- 
--- local random, max, min = math.random, math.max, math.min
--- 
--- local function testnear (val, ref, tol)
---   return (math.abs(val - ref) < ref * tol)
--- end
--- 
--- 
--- -- low-level!! For the current implementation of random in Lua,
--- -- the first call after seed 1007 should return 0x7a7040a5a323c9d6
--- do
---   -- all computations should work with 32-bit integers
---   local h <const> = 0x7a7040a5   -- higher half
---   local l <const> = 0xa323c9d6   -- lower half
--- 
---   math.randomseed(1007)
---   -- get the low 'intbits' of the 64-bit expected result
---   local res = (h << 32 | l) & ~(~0 << intbits)
---   -- assert(random(0) == res)
--- 
---   math.randomseed(1007, 0)
---   -- using higher bits to generate random floats; (the '% 2^32' converts
---   -- 32-bit integers to floats as unsigned)
---   local res
---   if floatbits <= 32 then
---     -- get all bits from the higher half
---     res = (h >> (32 - floatbits)) % 2^32
---   else
---     -- get 32 bits from the higher half and the rest from the lower half
---     res = (h % 2^32) * 2^(floatbits - 32) + ((l >> (64 - floatbits)) % 2^32)
---   end
---   local rand = random()
---   -- assert(eq(rand, 0x0.7a7040a5a323c9d6, 2^-floatbits))
---   assert(rand * 2^floatbits == res)
--- end
--- 
--- do
---   -- testing return of 'randomseed'
---   local x, y = math.randomseed()
---   local res = math.random(0)
---   x, y = math.randomseed(x, y)    -- should repeat the state
---   assert(math.random(0) == res)
---   math.randomseed(x, y)    -- again should repeat the state
---   assert(math.random(0) == res)
---   -- keep the random seed for following tests
---   print(string.format("random seeds: %d, %d", x, y))
--- end
--- 
--- do   -- test random for floats
---   local randbits = math.min(floatbits, 64)   -- at most 64 random bits
---   local mult = 2^randbits      -- to make random float into an integral
---   local counts = {}    -- counts for bits
---   for i = 1, randbits do counts[i] = 0 end
---   local up = -math.huge
---   local low = math.huge
---   local rounds = 100 * randbits   -- 100 times for each bit
---   local totalrounds = 0
---   ::doagain::   -- will repeat test until we get good statistics
---   for i = 0, rounds do
---     local t = random()
---     assert(0 <= t and t < 1)
---     up = max(up, t)
---     low = min(low, t)
---     assert(t * mult % 1 == 0)    -- no extra bits
---     local bit = i % randbits     -- bit to be tested
---     if (t * 2^bit) % 1 >= 0.5 then    -- is bit set?
---       counts[bit + 1] = counts[bit + 1] + 1   -- increment its count
---     end
---   end
---   totalrounds = totalrounds + rounds
---   if not (eq(up, 1, 0.001) and eq(low, 0, 0.001)) then
---     goto doagain
---   end
---   -- all bit counts should be near 50%
---   local expected = (totalrounds / randbits / 2)
---   for i = 1, randbits do
---     if not testnear(counts[i], expected, 0.10) then
---       goto doagain
---     end
---   end
---   print(string.format("float random range in %d calls: [%f, %f]",
---                       totalrounds, low, up))
--- end
--- 
--- 
+print("testing 'math.random'")
+
+local random, max, min = math.random, math.max, math.min
+
+local function testnear (val, ref, tol)
+  return (math.abs(val - ref) < ref * tol)
+end
+
+
+-- low-level!! For the current implementation of random in Lua,
+-- the first call after seed 1007 should return 0x7a7040a5a323c9d6
+do
+  -- all computations should work with 32-bit integers
+  local h <const> = 0x7a7040a5   -- higher half
+  local l <const> = 0xa323c9d6   -- lower half
+
+  math.randomseed(1007)
+  -- get the low 'intbits' of the 64-bit expected result
+  local res = (h << 32 | l) & ~(~0 << intbits)
+  -- assert(random(0) == res)
+
+  math.randomseed(1007, 0)
+  -- using higher bits to generate random floats; (the '% 2^32' converts
+  -- 32-bit integers to floats as unsigned)
+  local res
+  if floatbits <= 32 then
+    -- get all bits from the higher half
+    res = (h >> (32 - floatbits)) % 2^32
+  else
+    -- get 32 bits from the higher half and the rest from the lower half
+    res = (h % 2^32) * 2^(floatbits - 32) + ((l >> (64 - floatbits)) % 2^32)
+  end
+  local rand = random()
+  -- assert(eq(rand, 0x0.7a7040a5a323c9d6, 2^-floatbits))
+  assert(rand * 2^floatbits == res)
+end
+
+do
+  -- testing return of 'randomseed'
+  local x, y = math.randomseed()
+  local res = math.random(0)
+  x, y = math.randomseed(x, y)    -- should repeat the state
+  assert(math.random(0) == res)
+  math.randomseed(x, y)    -- again should repeat the state
+  assert(math.random(0) == res)
+  -- keep the random seed for following tests
+  print(string.format("random seeds: %d, %d", x, y))
+end
+
+do   -- test random for floats
+  local randbits = math.min(floatbits, 64)   -- at most 64 random bits
+  local mult = 2^randbits      -- to make random float into an integral
+  local counts = {}    -- counts for bits
+  for i = 1, randbits do counts[i] = 0 end
+  local up = -math.huge
+  local low = math.huge
+  local rounds = 100 * randbits   -- 100 times for each bit
+  local totalrounds = 0
+  ::doagain::   -- will repeat test until we get good statistics
+  for i = 0, rounds do
+    local t = random()
+    assert(0 <= t and t < 1)
+    up = max(up, t)
+    low = min(low, t)
+    assert(t * mult % 1 == 0)    -- no extra bits
+    local bit = i % randbits     -- bit to be tested
+    if (t * 2^bit) % 1 >= 0.5 then    -- is bit set?
+      counts[bit + 1] = counts[bit + 1] + 1   -- increment its count
+    end
+  end
+  totalrounds = totalrounds + rounds
+  if not (eq(up, 1, 0.001) and eq(low, 0, 0.001)) then
+    goto doagain
+  end
+  -- all bit counts should be near 50%
+  local expected = (totalrounds / randbits / 2)
+  for i = 1, randbits do
+    if not testnear(counts[i], expected, 0.10) then
+      goto doagain
+    end
+  end
+  print(string.format("float random range in %d calls: [%f, %f]",
+                      totalrounds, low, up))
+end
+
+
+-- TODO: error CyclesExceeded
 -- do   -- test random for full integers
 --   local up = 0
 --   local low = 0
@@ -1012,14 +1011,14 @@ end
 --   aux(minint, maxint - 1)
 --   aux(0, 1 << (intbits - 5))
 -- end
--- 
--- 
--- assert(not pcall(random, 1, 2, 3))    -- too many arguments
--- 
--- -- empty interval
--- assert(not pcall(random, minint + 1, minint))
--- assert(not pcall(random, maxint, maxint - 1))
--- assert(not pcall(random, maxint, minint))
+
+
+assert(not pcall(random, 1, 2, 3))    -- too many arguments
+
+-- empty interval
+assert(not pcall(random, minint + 1, minint))
+assert(not pcall(random, maxint, maxint - 1))
+assert(not pcall(random, maxint, minint))
 
 
 
