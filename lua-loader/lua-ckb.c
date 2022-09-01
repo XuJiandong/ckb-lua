@@ -12,12 +12,14 @@ typedef enum {
   STRING = 1 << 0,
   UINT64 = 1 << 1,
   SIZE_T = 1 << 2,
+  INTEGER = 1 << 3,
 } FIELD_TYPE;
 
 typedef union {
   string str;
   uint64_t u64;
   size_t size;
+  int integer;
 } FIELD_ARG;
 
 typedef struct {
@@ -32,7 +34,7 @@ typedef struct {
 
 #define THROW_ERROR(L, s, ...)                                                 \
   char _error[256];                                                            \
-  snprintf_(_error, 256, s, __VA_ARGS__);                                             \
+  snprintf_(_error, 256, s, __VA_ARGS__);                                      \
   lua_pushstring(L, _error);                                                   \
   lua_error(L);
 
@@ -66,8 +68,9 @@ typedef struct {
   lua_pushinteger(L, v);                                                       \
   lua_setfield(L, -2, n);
 
-void GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
-                           int minimal_count) {
+int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
+                          int minimal_count) {
+  int args_count = lua_gettop(L);
   if (lua_gettop(L) < minimal_count) {
     THROW_ERROR(L, "Invalid arguements count: expected %d got %d",
                 minimal_count, lua_gettop(L))
@@ -98,8 +101,16 @@ void GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
       }
       field->arg.size = lua_tointeger(L, i + 1);
     } break;
+    case INTEGER: {
+      if (i < minimal_count && lua_isinteger(L, i + 1) == 0) {
+        THROW_ERROR(L, "Invalid arguement \"%s\" at %d: need an integer",
+                    field->name, i + 1)
+      }
+      field->arg.integer = lua_tointeger(L, i + 1);
+    } break;
     }
   }
+  return args_count;
 }
 
 int CKB_LOAD_V2(lua_State *L, syscall_v2 f) {
@@ -131,6 +142,17 @@ int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
                            fields[1].arg.size, fields[2].arg.size,
                            fields[3].arg.size)
   return 1;
+}
+
+int lua_ckb_exit(lua_State *L) {
+  FIELD fields[] = {{"code", INTEGER}};
+  int code = 0;
+  int args_count = GET_FIELDS_WITH_CHECK(L, fields, 1, 0);
+  if (args_count == 1) {
+    code = fields[0].arg.integer;
+  }
+  ckb_exit(code);
+  return 0;
 }
 
 int lua_ckb_debug(lua_State *L) {
@@ -191,11 +213,13 @@ int lua_ckb_load_input_by_field(lua_State *L) {
 }
 
 static const luaL_Reg ckb_syscall[] = {
+    {"exit", lua_ckb_exit},
     {"debug", lua_ckb_debug},
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},
     {"load_script", lua_ckb_load_script},
     {"load_transaction", lua_ckb_load_transaction},
+
     {"load_cell", lua_ckb_load_cell},
     {"load_input", lua_ckb_load_input},
     {"load_header", lua_ckb_load_header},
