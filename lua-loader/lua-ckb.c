@@ -32,7 +32,7 @@ typedef struct {
 
 #define THROW_ERROR(L, s, ...)                                                 \
   char _error[256];                                                            \
-  sprintf(_error, s, __VA_ARGS__);                                             \
+  snprintf_(_error, 256, s, __VA_ARGS__);                                             \
   lua_pushstring(L, _error);                                                   \
   lua_error(L);
 
