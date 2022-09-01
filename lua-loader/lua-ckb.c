@@ -71,9 +71,9 @@ typedef struct {
 int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
                           int minimal_count) {
   int args_count = lua_gettop(L);
-  if (lua_gettop(L) < minimal_count) {
+  if (args_count < minimal_count) {
     THROW_ERROR(L, "Invalid arguements count: expected %d got %d",
-                minimal_count, lua_gettop(L))
+                minimal_count, args_count)
   }
   for (int i = 0; i < count; ++i) {
     FIELD *field = &fields[i];
@@ -212,6 +212,10 @@ int lua_ckb_load_input_by_field(lua_State *L) {
   return CKB_LOAD_V5(L, ckb_load_input_by_field);
 }
 
+int lua_ckb_load_header_by_field(lua_State *L) {
+  return CKB_LOAD_V5(L, ckb_load_header_by_field);
+}
+
 static const luaL_Reg ckb_syscall[] = {
     {"exit", lua_ckb_exit},
     {"debug", lua_ckb_debug},
@@ -227,6 +231,7 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_cell_data", lua_ckb_load_cell_data},
     {"load_cell_by_field", lua_ckb_load_cell_by_field},
     {"load_input_by_field", lua_ckb_load_input_by_field},
+    {"load_header_by_field", lua_ckb_load_header_by_field},
     {NULL, NULL}};
 
 LUAMOD_API int luaopen_ckb(lua_State *L) {
