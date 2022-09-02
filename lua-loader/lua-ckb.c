@@ -72,7 +72,7 @@ static char *EMPTY_STRING = "";
     return 2;                                                                  \
   }                                                                            \
   lua_pushstring(L, (char *)_buf);                                             \
-  lua_pushinteger(L, 0);                                                       \
+  lua_pushnil(L);                                             \
   return 2;
 
 #define SET_FIELD(L, v, n)                                                     \
