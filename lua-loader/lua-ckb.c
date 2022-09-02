@@ -59,7 +59,7 @@ static char *EMPTY_STRING = "";
       if (_buf == NULL) {                                                      \
         lua_pushstring(L, EMPTY_STRING);                                       \
         lua_pushinteger(L, -1);                                                \
-        return 1;                                                              \
+        return 2;                                                              \
       }                                                                        \
       _ret = f(_buf, &l, __VA_ARGS__);                                         \
     }                                                                          \
@@ -69,11 +69,11 @@ static char *EMPTY_STRING = "";
       free(_buf);                                                              \
     lua_pushstring(L, EMPTY_STRING);                                           \
     lua_pushinteger(L, _ret);                                                  \
-    return 1;                                                                  \
+    return 2;                                                                  \
   }                                                                            \
   lua_pushstring(L, (char *)_buf);                                             \
   lua_pushinteger(L, 0);                                                       \
-  return 1;
+  return 2;
 
 #define SET_FIELD(L, v, n)                                                     \
   lua_pushinteger(L, v);                                                       \
@@ -128,7 +128,6 @@ int CKB_LOAD_V2(lua_State *L, syscall_v2 f) {
   FIELD fields[] = {{"offset", SIZE_T}, {"length?", UINT64}};
   GET_FIELDS_WITH_CHECK(L, fields, 2, 1);
   CALL_SYSCALL_PUSH_RESULT(L, f, fields[1].arg.u64, fields[0].arg.size)
-  return 1;
 }
 
 int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
@@ -139,7 +138,6 @@ int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
   GET_FIELDS_WITH_CHECK(L, fields, 4, 3);
   CALL_SYSCALL_PUSH_RESULT(L, f, fields[3].arg.u64, fields[0].arg.size,
                            fields[1].arg.size, fields[2].arg.size)
-  return 1;
 }
 
 int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
@@ -152,7 +150,6 @@ int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
   CALL_SYSCALL_PUSH_RESULT(L, f, fields[4].arg.u64, fields[0].arg.size,
                            fields[1].arg.size, fields[2].arg.size,
                            fields[3].arg.size)
-  return 1;
 }
 
 int lua_ckb_exit(lua_State *L) {
