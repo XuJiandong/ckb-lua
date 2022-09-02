@@ -69,6 +69,7 @@ static char *EMPTY_STRING = "";
     return 2;                                                                  \
   }                                                                            \
   lua_pushlstring(L, (char *)_buf, l);                                         \
+  free(_buf);                                                                  \
   lua_pushnil(L);                                                              \
   return 2;
 
