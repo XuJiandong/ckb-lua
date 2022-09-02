@@ -13,13 +13,20 @@ typedef enum {
   UINT64 = 1 << 1,
   SIZE_T = 1 << 2,
   INTEGER = 1 << 3,
+  BUFFER = 1 << 4,
 } FIELD_TYPE;
+
+typedef struct {
+  void *buffer;
+  size_t length;
+} BUFFER_T;
 
 typedef union {
   string str;
   uint64_t u64;
   size_t size;
   int integer;
+  BUFFER_T buffer;
 } FIELD_ARG;
 
 typedef struct {
@@ -117,6 +124,16 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
       }
       field->arg.integer = lua_tointeger(L, i + 1);
     } break;
+    case BUFFER: {
+      if (i < minimal_count && lua_isstring(L, i + 1) == 0) {
+        THROW_ERROR(L, "Invalid arguement \"%s\" at %d: need a string",
+                    field->name, i + 1)
+      }
+      size_t length = 0;
+      void *buffer = (void *)lua_tolstring(L, i + 1, &length);
+      BUFFER_T b = {buffer, length};
+      field->arg.buffer = b;
+    } break;
     }
   }
   return args_count;
@@ -148,6 +165,94 @@ int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
   CALL_SYSCALL_PUSH_RESULT(L, f, fields[4].arg.u64, fields[0].arg.size,
                            fields[1].arg.size, fields[2].arg.size,
                            fields[3].arg.size)
+}
+
+// Usage:
+//     hexDump(desc, addr, len, perLine);
+//         desc:    if non-NULL, printed as a description before hex dump.
+//         addr:    the address to start dumping from.
+//         len:     the number of bytes to dump.
+//         perLine: number of bytes on each output line.
+
+void hexDump(const char *desc, const void *addr, const int len, int perLine) {
+  // Silently ignore silly per-line values.
+
+  if (perLine < 4 || perLine > 64)
+    perLine = 16;
+
+  int i;
+  unsigned char buff[perLine + 1];
+  const unsigned char *pc = (const unsigned char *)addr;
+
+  // Output description if given.
+
+  if (desc != NULL)
+    printf("%s:\n", desc);
+
+  // Length checks.
+
+  if (len == 0) {
+    printf("  ZERO LENGTH\n");
+    return;
+  }
+  if (len < 0) {
+    printf("  NEGATIVE LENGTH: %d\n", len);
+    return;
+  }
+
+  // Process every byte in the data.
+
+  for (i = 0; i < len; i++) {
+    // Multiple of perLine means new or first line (with line offset).
+
+    if ((i % perLine) == 0) {
+      // Only print previous-line ASCII buffer for lines beyond first.
+
+      if (i != 0)
+        printf("  %s\n", buff);
+
+      // Output the offset of current line.
+
+      printf("  %04x ", i);
+    }
+
+    // Now the hex code for the specific character.
+
+    printf(" %02x", pc[i]);
+
+    // And buffer a printable ASCII character for later.
+
+    if ((pc[i] < 0x20) || (pc[i] > 0x7e)) // isprint() may be better.
+      buff[i % perLine] = '.';
+    else
+      buff[i % perLine] = pc[i];
+    buff[(i % perLine) + 1] = '\0';
+  }
+
+  // Pad out last line if not exactly perLine characters.
+
+  while ((i % perLine) != 0) {
+    printf("   ");
+    i++;
+  }
+
+  // And print the final ASCII buffer.
+
+  printf("  %s\n", buff);
+}
+
+int lua_ckb_dump(lua_State *L) {
+  FIELD fields[] = {
+      {"buffer", BUFFER},
+      {"description?", STRING},
+      {"perline?", INTEGER},
+  };
+  int args_count = GET_FIELDS_WITH_CHECK(L, fields, 3, 1);
+  string desc = (args_count >= 2) ? fields[1].arg.str : "";
+  int perline = (args_count >= 3) ? fields[2].arg.integer : 0;
+  hexDump(desc, fields[0].arg.buffer.buffer, fields[0].arg.buffer.length,
+          perline);
+  return 0;
 }
 
 int lua_ckb_exit(lua_State *L) {
@@ -223,6 +328,7 @@ int lua_ckb_load_header_by_field(lua_State *L) {
 }
 
 static const luaL_Reg ckb_syscall[] = {
+    {"dump", lua_ckb_dump},
     {"exit", lua_ckb_exit},
     {"debug", lua_ckb_debug},
     {"load_tx_hash", lua_ckb_load_tx_hash},
