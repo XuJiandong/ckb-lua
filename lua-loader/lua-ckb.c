@@ -40,9 +40,6 @@ typedef struct {
 
 static char *EMPTY_STRING = "";
 
-// TODO: check if the string returned here need bookkeeping from c side,
-// i.e. if the string returned here is no longer reachable in lua code,
-// will lua's garbage collecter automatically collect it?
 #define CALL_SYSCALL_PUSH_RESULT(L, f, l, ...)                                 \
   int _ret = 0;                                                                \
   uint8_t *_buf = NULL;                                                        \
@@ -71,8 +68,8 @@ static char *EMPTY_STRING = "";
     lua_pushinteger(L, _ret);                                                  \
     return 2;                                                                  \
   }                                                                            \
-  lua_pushstring(L, (char *)_buf);                                             \
-  lua_pushnil(L);                                             \
+  lua_pushlstring(L, (char *)_buf, l);                                         \
+  lua_pushnil(L);                                                              \
   return 2;
 
 #define SET_FIELD(L, v, n)                                                     \
