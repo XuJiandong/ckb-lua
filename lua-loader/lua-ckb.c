@@ -34,10 +34,15 @@ typedef struct {
 
 #define THROW_ERROR(L, s, ...)                                                 \
   char _error[256];                                                            \
-  snprintf_(_error, 256, s, __VA_ARGS__);                                      \
+  snprintf_(_error, sizeof(_error) - 1, s, __VA_ARGS__);                       \
   lua_pushstring(L, _error);                                                   \
   lua_error(L);
 
+static char *EMPTY_STRING = "";
+
+// TODO: check if the string returned here need bookkeeping from c side,
+// i.e. if the string returned here is no longer reachable in lua code,
+// will lua's garbage collecter automatically collect it?
 #define CALL_SYSCALL_PUSH_RESULT(L, f, l, ...)                                 \
   int _ret = 0;                                                                \
   uint8_t *_buf = NULL;                                                        \
@@ -51,18 +56,24 @@ typedef struct {
     if (_buf == NULL) {                                                        \
       /* malloc for an empty buffer */                                         \
       _buf = malloc(l);                                                        \
+      if (_buf == NULL) {                                                      \
+        lua_pushstring(L, EMPTY_STRING);                                       \
+        lua_pushinteger(L, -1);                                                \
+        return 1;                                                              \
+      }                                                                        \
+      _ret = f(_buf, &l, __VA_ARGS__);                                         \
     }                                                                          \
-    _ret = f(_buf, &l, __VA_ARGS__);                                           \
   }                                                                            \
   if (_ret != 0) {                                                             \
-    THROW_ERROR(L, "Invalid CKB syscall response: %d", _ret)                   \
+    if (_buf != NULL)                                                          \
+      free(_buf);                                                              \
+    lua_pushstring(L, EMPTY_STRING);                                           \
+    lua_pushinteger(L, _ret);                                                  \
+    return 1;                                                                  \
   }                                                                            \
-  lua_newtable(L);                                                             \
-  for (int i = 0; i < l; ++i) {                                                \
-    lua_pushinteger(L, _buf[i]);                                               \
-    lua_rawseti(L, -2, i + 1);                                                 \
-  }                                                                            \
-  free(_buf);
+  lua_pushstring(L, (char *)_buf);                                             \
+  lua_pushinteger(L, 0);                                                       \
+  return 1;
 
 #define SET_FIELD(L, v, n)                                                     \
   lua_pushinteger(L, v);                                                       \
