@@ -77,8 +77,7 @@ static char *EMPTY_STRING = "";
   }                                                                            \
   lua_pushlstring(L, (char *)_buf, l);                                         \
   free(_buf);                                                                  \
-  lua_pushnil(L);                                                              \
-  return 2;
+  lua_pushnil(L);
 
 #define SET_FIELD(L, v, n)                                                     \
   lua_pushinteger(L, v);                                                       \
@@ -142,7 +141,8 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
 int CKB_LOAD_V2(lua_State *L, syscall_v2 f) {
   FIELD fields[] = {{"offset", SIZE_T}, {"length?", UINT64}};
   GET_FIELDS_WITH_CHECK(L, fields, 2, 1);
-  CALL_SYSCALL_PUSH_RESULT(L, f, fields[1].arg.u64, fields[0].arg.size)
+  CALL_SYSCALL_PUSH_RESULT(L, f, fields[1].arg.u64, fields[0].arg.size);
+  return 2;
 }
 
 int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
@@ -152,7 +152,8 @@ int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
                     {"length?", UINT64}};
   GET_FIELDS_WITH_CHECK(L, fields, 4, 3);
   CALL_SYSCALL_PUSH_RESULT(L, f, fields[3].arg.u64, fields[0].arg.size,
-                           fields[1].arg.size, fields[2].arg.size)
+                           fields[1].arg.size, fields[2].arg.size);
+  return 2;
 }
 
 int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
@@ -164,7 +165,8 @@ int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
   GET_FIELDS_WITH_CHECK(L, fields, 5, 4);
   CALL_SYSCALL_PUSH_RESULT(L, f, fields[4].arg.u64, fields[0].arg.size,
                            fields[1].arg.size, fields[2].arg.size,
-                           fields[3].arg.size)
+                           fields[3].arg.size);
+  return 2;
 }
 
 // Usage:
@@ -275,11 +277,11 @@ int lua_ckb_debug(lua_State *L) {
 
 int lua_ckb_load_tx_hash(lua_State *L) {
   uint64_t len = 0;
-  CALL_SYSCALL_PUSH_RESULT(L, ckb_load_tx_hash, len, 0)
+  CALL_SYSCALL_PUSH_RESULT(L, ckb_load_tx_hash, len, 0);
   if (len != 32) {
     THROW_ERROR(L, "Invalid CKB hash length: %ld", len)
   }
-  return 1;
+  return 2;
 }
 
 int lua_ckb_load_script_hash(lua_State *L) {
@@ -288,7 +290,7 @@ int lua_ckb_load_script_hash(lua_State *L) {
   if (len != 32) {
     THROW_ERROR(L, "Invalid CKB hash length: %ld", len)
   }
-  return 1;
+  return 2;
 }
 
 int lua_ckb_load_script(lua_State *L) {
