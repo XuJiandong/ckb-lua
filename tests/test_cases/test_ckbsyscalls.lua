@@ -109,3 +109,18 @@ print(error, #buf)
 ckb.dump(buf)
 assert(not error)
 assert(buf == "\x00\x00\x00\x00\x00\x00\x00\x00")
+
+local sources = {ckb.SOURCE_INPUT, ckb.SOURCE_GROUP_INPUT, ckb.SOURCE_CELL_DEP, ckb.SOURCE_HEADER_DEP}
+local header_fields = {ckb.HEADER_FIELD_EPOCH_NUMBER, ckb.HEADER_FIELD_EPOCH_START_BLOCK_NUMBER, ckb.HEADER_FIELD_EPOCH_LENGTH}
+
+for _, source in pairs(sources) do
+  local buf, error = ckb.load_header(0, 0, source)
+  assert(error)
+end
+
+for _, source in pairs(sources) do
+  for _, field in pairs(header_fields) do
+    local buf, error = ckb.load_header_by_field(0, 0, source, field)
+    assert(error)
+  end
+end
