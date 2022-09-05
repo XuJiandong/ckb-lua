@@ -1,6 +1,6 @@
 -- The results have been compared with results from https://github.com/contrun/ckb-x64-simulator/tree/dump-simulator-results
 
-local witness, error = ckb.load_witness(0, 0, ckb.source.INPUT)
+local witness, error = ckb.load_witness(0, 0, ckb.SOURCE_INPUT)
 assert(not error)
 assert(witness == "witnessfoobar")
 
@@ -20,95 +20,91 @@ local buf, error = ckb.load_script_hash(0)
 assert(not error)
 assert(buf == "\xca\x50\x5b\xee\x92\xc3\x4a\xc4\x52\x2d\x15\xda\x2c\x91\xf0\xe4\x06\x0e\x45\x40\xf9\x0a\x28\xd7\x20\x2d\xf8\xfe\x8c\xe9\x30\xba")
 
-local buf, error = ckb.load_cell(0, 0, ckb.source.INPUT)
+local buf, error = ckb.load_cell(0, 0, ckb.SOURCE_INPUT)
 assert(not error)
 assert(buf == "\x4d\x00\x00\x00\x10\x00\x00\x00\x18\x00\x00\x00\x4d\x00\x00\x00\x00\x6b\xf9\xb9\x04\x00\x00\x00\x35\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00")
 
-local buf, error = ckb.load_cell(0, 0, ckb.source.OUTPUT)
+local buf, error = ckb.load_cell(0, 0, ckb.SOURCE_OUTPUT)
 assert(not error)
 assert(buf == "\x88\x00\x00\x00\x10\x00\x00\x00\x18\x00\x00\x00\x4d\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x35\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x3b\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\xfa\x93\x98\x2d\x58\x2a\x0f\x33\x02\xa9\x6a\xc3\x49\x44\xd1\x4b\x41\xd5\x35\x49\xb9\xfb\x2a\xb2\x84\xea\xfc\x1d\x02\x15\x88\xad\x02\x06\x00\x00\x00\x66\x6f\x6f\x62\x61\x72")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.CAPACITY)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_CAPACITY)
 assert(not error)
 assert(buf == "\x00\x6b\xf9\xb9\x04\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.DATA_HASH)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_DATA_HASH)
 assert(not error)
 assert(buf == "\x52\x1c\x60\x4c\xc0\x9b\x81\x4b\x0a\x91\x06\x30\x53\x95\xde\xf3\x5d\x02\x11\xb9\x99\x6a\x3e\x0f\x32\x6a\xe4\xd6\x71\xbd\x8f\xc2")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.LOCK)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_LOCK)
 assert(not error)
 assert(buf == "\x35\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.LOCK_HASH)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_LOCK_HASH)
 assert(not error)
 assert(buf == "\x8f\x59\xe3\x40\xcf\xbe\xa0\x88\x72\x02\x65\xce\xf0\xfd\x9a\xfa\x4e\x42\x0b\xf2\x7c\x7b\x3d\xc8\xae\xbf\x6c\x6e\xda\x45\x3e\x57")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.TYPE)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_TYPE)
 assert(error)
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.TYPE_HASH)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_TYPE_HASH)
 assert(error)
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.INPUT, ckb.cell.OCCUPIED_CAPACITY)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_INPUT, ckb.CELL_FIELD_OCCUPIED_CAPACITY)
 assert(not error)
 assert(buf == "\x00\xac\x42\x06\x01\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.CAPACITY)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_CAPACITY)
 print(error, #buf)
 ckb.dump(buf)
 assert(not error)
 assert(buf == "\x00\x00\x00\x00\x00\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.DATA_HASH)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_DATA_HASH)
 assert(not error)
 assert(buf == "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.LOCK)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_LOCK)
 assert(not error)
 assert(buf == "\x35\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.LOCK)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_LOCK)
 assert(not error)
 assert(buf == "\x35\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.LOCK_HASH)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_LOCK_HASH)
 assert(not error)
 assert(buf == "\x8f\x59\xe3\x40\xcf\xbe\xa0\x88\x72\x02\x65\xce\xf0\xfd\x9a\xfa\x4e\x42\x0b\xf2\x7c\x7b\x3d\xc8\xae\xbf\x6c\x6e\xda\x45\x3e\x57")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.TYPE)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_TYPE)
 assert(not error)
 assert(buf == "\x3b\x00\x00\x00\x10\x00\x00\x00\x30\x00\x00\x00\x31\x00\x00\x00\xfa\x93\x98\x2d\x58\x2a\x0f\x33\x02\xa9\x6a\xc3\x49\x44\xd1\x4b\x41\xd5\x35\x49\xb9\xfb\x2a\xb2\x84\xea\xfc\x1d\x02\x15\x88\xad\x02\x06\x00\x00\x00\x66\x6f\x6f\x62\x61\x72")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.TYPE_HASH)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_TYPE_HASH)
 assert(not error)
 assert(buf == "\xca\x50\x5b\xee\x92\xc3\x4a\xc4\x52\x2d\x15\xda\x2c\x91\xf0\xe4\x06\x0e\x45\x40\xf9\x0a\x28\xd7\x20\x2d\xf8\xfe\x8c\xe9\x30\xba")
 
-local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.OCCUPIED_CAPACITY)
+local buf, error = ckb.load_cell_by_field(0, 0, ckb.SOURCE_OUTPUT, ckb.CELL_FIELD_OCCUPIED_CAPACITY)
 assert(not error)
 assert(buf == "\x00\x50\xd6\xdc\x01\x00\x00\x00")
 
-local buf, error = ckb.load_cell_data(0, 0, ckb.source.INPUT)
+local buf, error = ckb.load_cell_data(0, 0, ckb.SOURCE_INPUT)
 assert(not error)
 assert(buf == "\x61\x62\x63")
 
-local buf, error = ckb.load_cell_data(0, 0, ckb.source.OUTPUT)
+local buf, error = ckb.load_cell_data(0, 0, ckb.SOURCE_OUTPUT)
 assert(not error)
 assert(buf == "")
 
-local buf, error = ckb.load_input(0, 0, ckb.source.INPUT)
-print(error, #buf)
-ckb.dump(buf)
+local buf, error = ckb.load_input(0, 0, ckb.SOURCE_INPUT)
 assert(not error)
 assert(buf == "\x00\x00\x00\x00\x00\x00\x00\x00\xa9\x8c\x57\x13\x58\x30\xe1\xb9\x13\x45\x94\x8d\xf6\xc4\xb8\x87\x08\x28\x19\x9a\x78\x6b\x26\xf0\x9f\x7d\xec\x4b\xc2\x7a\x73\xda\x00\x00\x00\x00")
 
-local buf, error = ckb.load_input_by_field(0, 0, ckb.source.INPUT, ckb.input.OUT_POINT)
-print(error, #buf)
-ckb.dump(buf)
+local buf, error = ckb.load_input_by_field(0, 0, ckb.SOURCE_INPUT, ckb.INPUT_FIELD_OUT_POINT)
 assert(not error)
 assert(buf == "\xa9\x8c\x57\x13\x58\x30\xe1\xb9\x13\x45\x94\x8d\xf6\xc4\xb8\x87\x08\x28\x19\x9a\x78\x6b\x26\xf0\x9f\x7d\xec\x4b\xc2\x7a\x73\xda\x00\x00\x00\x00")
 
-local buf, error = ckb.load_input_by_field(0, 0, ckb.source.INPUT, ckb.input.SINCE)
+local buf, error = ckb.load_input_by_field(0, 0, ckb.SOURCE_INPUT, ckb.INPUT_FIELD_SINCE)
 print(error, #buf)
 ckb.dump(buf)
 assert(not error)
