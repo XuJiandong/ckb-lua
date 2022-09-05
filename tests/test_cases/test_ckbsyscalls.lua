@@ -87,3 +87,29 @@ assert(buf == "\xca\x50\x5b\xee\x92\xc3\x4a\xc4\x52\x2d\x15\xda\x2c\x91\xf0\xe4\
 local buf, error = ckb.load_cell_by_field(0, 0, ckb.source.OUTPUT, ckb.cell.OCCUPIED_CAPACITY)
 assert(not error)
 assert(buf == "\x00\x50\xd6\xdc\x01\x00\x00\x00")
+
+local buf, error = ckb.load_cell_data(0, 0, ckb.source.INPUT)
+assert(not error)
+assert(buf == "\x61\x62\x63")
+
+local buf, error = ckb.load_cell_data(0, 0, ckb.source.OUTPUT)
+assert(not error)
+assert(buf == "")
+
+local buf, error = ckb.load_input(0, 0, ckb.source.INPUT)
+print(error, #buf)
+ckb.dump(buf)
+assert(not error)
+assert(buf == "\x00\x00\x00\x00\x00\x00\x00\x00\xa9\x8c\x57\x13\x58\x30\xe1\xb9\x13\x45\x94\x8d\xf6\xc4\xb8\x87\x08\x28\x19\x9a\x78\x6b\x26\xf0\x9f\x7d\xec\x4b\xc2\x7a\x73\xda\x00\x00\x00\x00")
+
+local buf, error = ckb.load_input_by_field(0, 0, ckb.source.INPUT, ckb.input.OUT_POINT)
+print(error, #buf)
+ckb.dump(buf)
+assert(not error)
+assert(buf == "\xa9\x8c\x57\x13\x58\x30\xe1\xb9\x13\x45\x94\x8d\xf6\xc4\xb8\x87\x08\x28\x19\x9a\x78\x6b\x26\xf0\x9f\x7d\xec\x4b\xc2\x7a\x73\xda\x00\x00\x00\x00")
+
+local buf, error = ckb.load_input_by_field(0, 0, ckb.source.INPUT, ckb.input.SINCE)
+print(error, #buf)
+ckb.dump(buf)
+assert(not error)
+assert(buf == "\x00\x00\x00\x00\x00\x00\x00\x00")
