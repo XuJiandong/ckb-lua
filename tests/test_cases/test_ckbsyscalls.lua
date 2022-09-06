@@ -4,6 +4,18 @@ local buf, error = ckb.load_witness(0, ckb.SOURCE_INPUT)
 assert(not error)
 assert(buf == "witnessfoobar")
 
+local length, error = ckb.load_witness(0, ckb.SOURCE_INPUT, 0)
+assert(not error)
+assert(length == 13)
+
+local buf, error = ckb.load_witness(0, ckb.SOURCE_INPUT, 0, 1)
+assert(not error)
+assert(buf == 12)
+
+local buf, error = ckb.load_witness(0, ckb.SOURCE_INPUT, 0, 14)
+assert(not error)
+assert(buf == 0)
+
 local buf, error = ckb.load_witness(0, ckb.SOURCE_INPUT, 13)
 assert(not error)
 assert(buf == "witnessfoobar")

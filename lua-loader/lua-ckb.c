@@ -50,7 +50,7 @@ typedef struct {
 
 static char *EMPTY_STRING = "";
 
-#define CALL_SYSCALL_PUSH_RESULT(L, f, length, ...)      \
+#define CALL_SYSCALL_PUSH_RESULT(L, f, length, ...)                            \
   int _ret = 0;                                                                \
   size_t _ml = 0;                                                              \
   if (length == NULL) {                                                        \
@@ -156,7 +156,6 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
       BUFFER_T b = {buffer, length};
       field->arg.buffer = b;
     } break;
-
     }
   }
   return args_count;
@@ -208,7 +207,7 @@ int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
 
 int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
   FIELD fields[] = {
-      {"index", SIZE_T},   {"source", SIZE_T}, {"field", SIZE_T},
+      {"index", SIZE_T},   {"source", SIZE_T},  {"field", SIZE_T},
       {"length?", UINT64}, {"offset?", SIZE_T},
   };
 
