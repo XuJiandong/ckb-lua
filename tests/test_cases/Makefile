@@ -33,7 +33,7 @@ ci:
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
 	$(call run, out_of_memory.lua) 2>&1 | fgrep 'not enough memory'
 	$(call run, out_of_memory2.lua) 2>&1 | fgrep 'not enough memory'
-	$(call run, bn.lua)
+	$(call run_ci, bn.lua)
 
 run-pretty:
 	$(call run_pretty_result, test_$(TEST).lua)
