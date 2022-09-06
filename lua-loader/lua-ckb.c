@@ -50,40 +50,40 @@ typedef struct {
 
 static char *EMPTY_STRING = "";
 
-#define CALL_SYSCALL_PUSH_RESULT(L, f, l, ...)                                 \
+#define CALL_SYSCALL_PUSH_RESULT(L, f, length, ...)      \
   int _ret = 0;                                                                \
   size_t _ml = 0;                                                              \
-  if (l == NULL) {                                                             \
+  if (length == NULL) {                                                        \
     /* just get buffer length */                                               \
-    l = &_ml;                                                                  \
-    _ret = f(NULL, l, __VA_ARGS__);                                            \
+    length = &_ml;                                                             \
+    _ret = f(NULL, length, __VA_ARGS__);                                       \
     if (_ret) {                                                                \
       lua_pushstring(L, EMPTY_STRING);                                         \
       lua_pushinteger(L, _ret);                                                \
       return 2;                                                                \
     }                                                                          \
-  } else if (*l == 0) {                                                        \
+  } else if (*length == 0) {                                                   \
     /* get buffer length and return */                                         \
-    _ret = f(NULL, l, __VA_ARGS__);                                            \
+    _ret = f(NULL, length, __VA_ARGS__);                                       \
     if (_ret != 0) {                                                           \
       lua_pushinteger(L, 0);                                                   \
       lua_pushinteger(L, _ret);                                                \
     } else {                                                                   \
-      lua_pushinteger(L, *l);                                                  \
+      lua_pushinteger(L, *length);                                             \
       lua_pushnil(L);                                                          \
     }                                                                          \
     return 2;                                                                  \
   }                                                                            \
   /* Save the original length as syscall may override it */                    \
-  _ml = *l;                                                                    \
-  uint8_t *_buf = malloc(*l);                                                  \
+  _ml = *length;                                                               \
+  uint8_t *_buf = malloc(*length);                                             \
   if (_buf == NULL) {                                                          \
     /* malloc failed */                                                        \
     lua_pushstring(L, EMPTY_STRING);                                           \
     lua_pushinteger(L, -CKB_LUA_OUT_OF_MEMORY);                                \
     return 2;                                                                  \
   }                                                                            \
-  _ret = f(_buf, l, __VA_ARGS__);                                              \
+  _ret = f(_buf, length, __VA_ARGS__);                                         \
   if (_ret != 0) {                                                             \
     free(_buf);                                                                \
     lua_pushstring(L, EMPTY_STRING);                                           \
@@ -91,8 +91,8 @@ static char *EMPTY_STRING = "";
     return 2;                                                                  \
   }                                                                            \
   /* We have passed a buffer with a size larger than what is needed */         \
-  if (_ml > *l) {                                                              \
-    _ml = *l;                                                                  \
+  if (_ml > *length) {                                                         \
+    _ml = *length;                                                             \
   }                                                                            \
   lua_pushlstring(L, (char *)_buf, _ml);                                       \
   free(_buf);                                                                  \
@@ -112,6 +112,7 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
   }
   for (int i = 0; i < count; ++i) {
     FIELD *field = &fields[i];
+
     switch (field->type) {
     case STRING: {
       if (i < minimal_count && lua_isstring(L, i + 1) == 0) {
@@ -136,6 +137,7 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
       }
       field->arg.size = lua_tointeger(L, i + 1);
     } break;
+
     case INTEGER: {
       if (i < minimal_count && lua_isinteger(L, i + 1) == 0) {
         THROW_ERROR(L, "Invalid arguement \"%s\" at %d: need an integer",
@@ -143,6 +145,7 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
       }
       field->arg.integer = lua_tointeger(L, i + 1);
     } break;
+
     case BUFFER: {
       if (i < minimal_count && lua_isstring(L, i + 1) == 0) {
         THROW_ERROR(L, "Invalid arguement \"%s\" at %d: need a string",
@@ -153,6 +156,7 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
       BUFFER_T b = {buffer, length};
       field->arg.buffer = b;
     } break;
+
     }
   }
   return args_count;
@@ -205,7 +209,7 @@ int CKB_LOAD_V4(lua_State *L, syscall_v4 f) {
 int CKB_LOAD_V5(lua_State *L, syscall_v5 f) {
   FIELD fields[] = {
       {"index", SIZE_T},   {"source", SIZE_T}, {"field", SIZE_T},
-      {"length?", UINT64}, {"offset", SIZE_T},
+      {"length?", UINT64}, {"offset?", SIZE_T},
   };
 
   uint64_t *length = NULL;
@@ -324,13 +328,11 @@ int lua_ckb_debug(lua_State *L) {
 }
 
 int lua_ckb_load_tx_hash(lua_State *L) {
-  uint64_t *length = NULL;
-  CALL_SYSCALL_PUSH_RESULT(L, ckb_load_tx_hash, length, 0);
+  return CKB_LOAD_V2(L, ckb_load_tx_hash);
 }
 
 int lua_ckb_load_script_hash(lua_State *L) {
-  uint64_t *length = NULL;
-  CALL_SYSCALL_PUSH_RESULT(L, ckb_load_script_hash, length, 0)
+  return CKB_LOAD_V2(L, ckb_load_script_hash);
 }
 
 int lua_ckb_load_script(lua_State *L) {
