@@ -17,6 +17,7 @@
 
 #include "blockchain.h"
 #include "ckb_syscalls.h"
+#include "fs.h"
 
 #define LUA_LOADER_ARGS_SIZE 2
 #define BLAKE2B_BLOCK_SIZE 32

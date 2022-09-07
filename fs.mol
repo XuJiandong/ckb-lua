@@ -1,0 +1,25 @@
+vector Bytes <byte>;
+array Uint32 [byte; 4];
+array Uint64 [byte; 8];
+
+struct Blob {
+  offset: Uint32,
+  length: Uint32,
+}
+
+struct FSEntry {
+  file_name: Blob,
+  file_content: Blob,
+}
+
+table File {
+  name: Bytes,
+  content: Bytes,
+}
+
+vector FSMeta <FSEntry>;
+
+table FS {
+  meta: FSMeta,
+  bytes: Bytes,
+}
