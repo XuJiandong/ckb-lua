@@ -231,7 +231,7 @@ void set_length_and_offset(FIELD *fields, int fields_count, uint64_t **length,
     }
 }
 
-int CKB_LOAD3(lua_State *L, syscall3 f) {
+struct syscall_function_t CKB_GET_SYSCALL3_ARGUMENTS(lua_State *L, syscall3 f) {
     FIELD fields[] = {{"length?", UINT64}, {"offset?", SIZE_T}};
 
     uint64_t *length = NULL;
@@ -245,10 +245,15 @@ int CKB_LOAD3(lua_State *L, syscall3 f) {
         .length = length,
     };
     nf.extra_arguments[0] = offset;
+    return nf;
+}
+
+int CKB_LOAD3(lua_State *L, syscall3 f) {
+    struct syscall_function_t nf = CKB_GET_SYSCALL3_ARGUMENTS(L, f);
     return call_syscall_push_result(L, &nf);
 }
 
-int CKB_LOAD5(lua_State *L, syscall5 f) {
+struct syscall_function_t CKB_GET_SYSCALL5_ARGUMENTS(lua_State *L, syscall5 f) {
     FIELD fields[] = {
         {"index", SIZE_T},
         {"source", SIZE_T},
@@ -270,10 +275,15 @@ int CKB_LOAD5(lua_State *L, syscall5 f) {
     nf.extra_arguments[0] = offset;
     nf.extra_arguments[1] = fields[0].arg.size;
     nf.extra_arguments[2] = fields[1].arg.size;
+    return nf;
+}
+
+int CKB_LOAD5(lua_State *L, syscall5 f) {
+    struct syscall_function_t nf = CKB_GET_SYSCALL5_ARGUMENTS(L, f);
     return call_syscall_push_result(L, &nf);
 }
 
-int CKB_LOAD6(lua_State *L, syscall6 f) {
+struct syscall_function_t CKB_GET_SYSCALL6_ARGUMENTS(lua_State *L, syscall6 f) {
     FIELD fields[] = {
         {"index", SIZE_T},   {"source", SIZE_T},  {"field", SIZE_T},
         {"length?", UINT64}, {"offset?", SIZE_T},
@@ -294,6 +304,11 @@ int CKB_LOAD6(lua_State *L, syscall6 f) {
     nf.extra_arguments[1] = fields[0].arg.size;
     nf.extra_arguments[2] = fields[1].arg.size;
     nf.extra_arguments[3] = fields[2].arg.size;
+    return nf;
+}
+
+int CKB_LOAD6(lua_State *L, syscall6 f) {
+    struct syscall_function_t nf = CKB_GET_SYSCALL6_ARGUMENTS(L, f);
     return call_syscall_push_result(L, &nf);
 }
 
