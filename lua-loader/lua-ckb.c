@@ -2,8 +2,8 @@
 #include "ckb_syscalls.h"
 #include "lauxlib.h"
 #include "lualib.h"
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "blockchain.h"
 
@@ -497,6 +497,48 @@ int lua_ckb_load_cell_by_field(lua_State *L) {
     return CKB_LOAD6(L, ckb_load_cell_by_field);
 }
 
+int lua_ckb_load_all_cell_fields(lua_State *L) {
+    FIELD fields[] = {
+        {"source", SIZE_T},
+        {"field", SIZE_T},
+    };
+
+    GET_FIELDS_WITH_CHECK(L, fields, 2, 2);
+
+    int ret = 0;
+    size_t index = 0;
+    struct syscall_function_t nf = {
+        .num_extra_arguments = 4,
+        .function.f6 = ckb_load_cell_by_field,
+        .length = NULL,
+    };
+    nf.extra_arguments[0] = 0;
+    nf.extra_arguments[2] = fields[0].arg.size;
+    nf.extra_arguments[3] = fields[1].arg.size;
+    lua_newtable(L);
+    while (1) {
+        // reset fields that may be set by call_syscall_get_result
+        nf.length = NULL;
+        nf.extra_arguments[1] = index;
+        BUFFER_T result = {.buffer = NULL, .length = 0};
+        int ret = call_syscall_get_result(&result, &nf);
+        if (ret == CKB_INDEX_OUT_OF_BOUND) {
+            break;
+        } else if (ret != CKB_SUCCESS) {
+            goto fail;
+        }
+        index++;
+        lua_pushlstring(L, (char *)result.buffer, result.length);
+        lua_rawseti(L, -2, index);
+    }
+    lua_pushnil(L);
+    return 2;
+fail:
+    lua_pushnil(L);
+    lua_pushinteger(L, ret);
+    return 2;
+}
+
 int lua_ckb_load_input_by_field(lua_State *L) {
     return CKB_LOAD6(L, ckb_load_input_by_field);
 }
@@ -521,6 +563,7 @@ static const luaL_Reg ckb_syscall[] = {
     {"load_witness", lua_ckb_load_witness},
     {"load_cell_data", lua_ckb_load_cell_data},
     {"load_cell_by_field", lua_ckb_load_cell_by_field},
+    {"load_all_cell_fields", lua_ckb_load_all_cell_fields},
     {"load_input_by_field", lua_ckb_load_input_by_field},
     {"load_header_by_field", lua_ckb_load_header_by_field},
     {NULL, NULL}};
