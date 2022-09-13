@@ -253,7 +253,7 @@ int CKB_LOAD3(lua_State *L, syscall3 f) {
     return call_syscall_push_result(L, &nf);
 }
 
-struct syscall_function_t CKB_GET_SYSCALL5_ARGUMENTS(lua_State *L, syscall5 f) {
+int CKB_LOAD5(lua_State *L, syscall5 f) {
     FIELD fields[] = {
         {"index", SIZE_T},
         {"source", SIZE_T},
@@ -275,11 +275,6 @@ struct syscall_function_t CKB_GET_SYSCALL5_ARGUMENTS(lua_State *L, syscall5 f) {
     nf.extra_arguments[0] = offset;
     nf.extra_arguments[1] = fields[0].arg.size;
     nf.extra_arguments[2] = fields[1].arg.size;
-    return nf;
-}
-
-int CKB_LOAD5(lua_State *L, syscall5 f) {
-    struct syscall_function_t nf = CKB_GET_SYSCALL5_ARGUMENTS(L, f);
     return call_syscall_push_result(L, &nf);
 }
 
