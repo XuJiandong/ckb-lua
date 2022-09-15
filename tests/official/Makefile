@@ -36,8 +36,9 @@ all:
 	$(call run, bitwise.lua)
 	$(call run, constructs.lua)
 	$(call run, db.lua)
+	$(call run, errors.lua)
 
-# failed tests: attrib big cstack errors files main nextvar pm verybig
+# failed tests: attrib big cstack files main nextvar pm verybig
 ci:
 	$(call run_ci, locals.lua)
 	$(call run_ci, literals.lua)
@@ -63,6 +64,7 @@ ci:
 	$(call run_ci, bitwise.lua)
 	$(call run_ci, constructs.lua)
 	$(call run_ci, db.lua)
+	$(call run_ci, errors.lua)
 
 test-file:
 	$(call run, $(TEST-FILE).lua)	
