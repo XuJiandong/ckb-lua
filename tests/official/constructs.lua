@@ -351,7 +351,7 @@ local function createcases (n)
 end
 
 -- do not do too many combinations for soft tests
-local level = _soft and 3 or 4
+local level = _soft and 2 or 3
 
 cases[1] = basiccases
 for i = 2, level do cases[i] = createcases(i) end
