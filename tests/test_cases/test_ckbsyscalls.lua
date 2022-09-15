@@ -174,17 +174,3 @@ assert(not error)
 assert(hash_type == 2)
 assert(code_hash == "\xfa\x93\x98\x2d\x58\x2a\x0f\x33\x02\xa9\x6a\xc3\x49\x44\xd1\x4b\x41\xd5\x35\x49\xb9\xfb\x2a\xb2\x84\xea\xfc\x1d\x02\x15\x88\xad")
 assert(args == "\x66\x6f\x6f\x62\x61\x72")
-
--- The only way to get table length is to iterate the whole table with pairs
--- https://stackoverflow.com/questions/2705793/how-to-get-number-of-entries-in-a-lua-table
-function gettablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
-end
-
-local capacities, error = ckb.load_all_cell_fields(ckb.SOURCE_INPUT, ckb.CELL_FIELD_CAPACITY)
-assert(not error)
-assert(type(capacities) == "table")
-assert(gettablelength(capacities) == 1)
-assert(capacities[1] == "\x00\x6b\xf9\xb9\x04\x00\x00\x00")
