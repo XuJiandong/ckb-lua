@@ -220,12 +220,14 @@ int GET_FIELDS_WITH_CHECK(lua_State *L, FIELD *fields, int count,
 
 void set_length_and_offset(FIELD *fields, int fields_count, uint64_t **length,
                            size_t *offset) {
+    *length = NULL;
     switch (fields_count) {
         case 0:
             break;
 
         case 1:
             *length = &fields[0].arg.u64;
+            break;
 
         case 2:
             *length = &fields[0].arg.u64;
