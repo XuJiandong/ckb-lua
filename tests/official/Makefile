@@ -38,8 +38,16 @@ all:
 	$(call run, db.lua)
 	$(call run, errors.lua)
 	$(call run, nextvar.lua)
+	$(call run, pm.lua)
 
-# failed tests: attrib big cstack files main pm verybig
+# failed tests: attrib big cstack files main erybig
+# attrib runs some file operations
+# big should be wrapped in a coroutine, https://github.com/XuJiandong/ckb-lua/blob/e3e9a28a36aa5e6c1011c7a83aa56c1c7f9e69e3/tests/official/all.lua#L176
+# cstack requires fwrite
+# files has too many unsupported io operation
+# main has too many unsupported io operation
+# verybig creates a big lua script file, and then run it.
+
 ci:
 	$(call run_ci, locals.lua)
 	$(call run_ci, literals.lua)
@@ -67,6 +75,7 @@ ci:
 	$(call run_ci, db.lua)
 	$(call run_ci, errors.lua)
 	$(call run_ci, nextvar.lua)
+	$(call run_ci, pm.lua)
 
 test-file:
 	$(call run, $(TEST-FILE).lua)	
