@@ -6,7 +6,8 @@ ERROR_INVALID_CELL_DATA = 5
 ERROR_OVERFLOWING = 6
 ERROR_INVALID_AMOUNT = 7
 
-BLAKE2B_BLOCK_SIZE = 32
+OWNER_PK_HASH_SIZE = 20
+LUA_LOADER_ARGS_SIZE = 35
 AMOUNT_BITS = 128
 
 local bn = {}
@@ -101,49 +102,57 @@ load = function(self, raw)
     end
 end
 
-function main()
+function get_owner_pk_hash() 
   _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
-  if err != nil then
+  if err ~= nil then
     return -ERROR_LOAD_SCRIPT
-  fi
+  end
 
   -- args must be a hash of the owner private key
-  if #args != BLAKE2B_BLOCK_SIZE then
+  if #args ~= (OWNER_PK_HASH_SIZE + LUA_LOADER_ARGS_SIZE) then
     return -ERROR_INVALID_SCRIPT
-  fi
+  end
+
+  owner_pk_hash = string.sub(args, LUA_LOADER_ARGS_SIZE+1, -1)
+  print("owner pk hash")
+  ckb.dump(owner_pk_hash)
+
+  return owner_pk_hash
+end
+
+function main()
+  local owner_pk_hash = get_owner_pk_hash()
 
   local index = 0
   while true do
-    local data, err = ckb.load_cell_by_field(ckb.SOURCE_INPUT, ckb.CELL_FIELD_LOCK_HASH, index)
-    if err == ckb.INDEX_OUT_OF_BOUND then
+    local data, err = ckb.load_cell_by_field(index, ckb.SOURCE_INPUT, ckb.CELL_FIELD_LOCK_HASH)
+    if err == -ckb.INDEX_OUT_OF_BOUND then
       break
     end
-    if err != nil then
+    if err ~= nil then
       return -ERROR_LOAD_LOCK_HASH
     end
-    -- One of the input is from the owner, return success immediately
-    if data == args then
-      return 0
-    end
+    print("lock hash")
+    ckb.dump(data)
     index = index + 1
   end
 
-  local tmp_number = bn.new(bits, 0)
+  local tmp_number = bn.new(AMOUNT_BITS, 0)
 
   local index = 0
-  local input_sum = bn.new(bits, 0)
+  local input_sum = bn.new(AMOUNT_BITS, 0)
   while true do
-    local data, err = ckb.load_cell_data(CKB_SOURCE_GROUP_INPUT, index)
-    if err == ckb.INDEX_OUT_OF_BOUND then
+    local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_INPUT)
+    if err == -ckb.INDEX_OUT_OF_BOUND then
       break
     end
-    if err != nil then
+    if err ~= nil then
       return -ERROR_LOAD_CELL_DATA
     end
-    if #data * 8 != AMOUNT_BITS then
+    if #data * 8 ~= AMOUNT_BITS then
       return -ERROR_INVALID_CELL_DATA
     end
-    tmp_number:load(input)
+    tmp_number:load(data)
     input_sum = input_sum + tmp_number
     if input_sum.overflow then
       return -ERROR_OVERFLOWING
@@ -152,19 +161,19 @@ function main()
   end
 
   local index = 0
-  local output_sum = bn.new(bits, 0)
+  local output_sum = bn.new(AMOUNT_BITS, 0)
   while true do
-    local data, err = ckb.load_cell_data(CKB_SOURCE_GROUP_output, index)
-    if err == ckb.INDEX_OUT_OF_BOUND then
+    local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_OUTPUT)
+    if err == -ckb.INDEX_OUT_OF_BOUND then
       break
     end
-    if err != nil then
+    if err ~= nil then
       return -ERROR_LOAD_CELL_DATA
     end
-    if #data * 8 != AMOUNT_BITS then
+    if #data * 8 ~= AMOUNT_BITS then
       return -ERROR_INVALID_CELL_DATA
     end
-    tmp_number:load(output)
+    tmp_number:load(data)
     output_sum = output_sum + tmp_number
     if output_sum.overflow then
       return -ERROR_OVERFLOWING
@@ -172,9 +181,12 @@ function main()
     index = index + 1
   end
 
+  print("input_sum", input_sum, "output_sum", output_sum, "\n")
   if input_sum < output_sum then
     return -ERROR_INVALID_AMOUNT
   end
 
   return 0
 end
+
+ckb.exit(main())
