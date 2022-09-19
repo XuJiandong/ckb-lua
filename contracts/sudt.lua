@@ -6,7 +6,7 @@ ERROR_INVALID_CELL_DATA = 5
 ERROR_OVERFLOWING = 6
 ERROR_INVALID_AMOUNT = 7
 
-OWNER_PK_HASH_SIZE = 20
+OWNER_LOCK_HASH_SIZE = 32
 LUA_LOADER_ARGS_SIZE = 35
 AMOUNT_BITS = 128
 
@@ -102,26 +102,26 @@ load = function(self, raw)
     end
 end
 
-function get_owner_pk_hash() 
+function get_owner_lock_hash() 
   _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
   if err ~= nil then
     return -ERROR_LOAD_SCRIPT
   end
 
   -- args must be a hash of the owner private key
-  if #args ~= (OWNER_PK_HASH_SIZE + LUA_LOADER_ARGS_SIZE) then
+  if #args ~= (OWNER_LOCK_HASH_SIZE + LUA_LOADER_ARGS_SIZE) then
     return -ERROR_INVALID_SCRIPT
   end
 
-  owner_pk_hash = string.sub(args, LUA_LOADER_ARGS_SIZE+1, -1)
+  owner_lock_hash = string.sub(args, LUA_LOADER_ARGS_SIZE+1, -1)
   print("owner pk hash")
-  ckb.dump(owner_pk_hash)
+  ckb.dump(owner_lock_hash)
 
-  return owner_pk_hash
+  return owner_lock_hash
 end
 
 function main()
-  local owner_pk_hash = get_owner_pk_hash()
+  local owner_lock_hash = get_owner_lock_hash()
 
   local index = 0
   while true do
@@ -134,6 +134,9 @@ function main()
     end
     print("lock hash")
     ckb.dump(data)
+    if data == owner_lock_hash then
+      return 0
+    end
     index = index + 1
   end
 
