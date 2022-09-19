@@ -9,6 +9,7 @@ ERROR_INVALID_AMOUNT = 7
 OWNER_LOCK_HASH_SIZE = 32
 LUA_LOADER_ARGS_SIZE = 35
 AMOUNT_BITS = 128
+AMOUNT_BYTES = AMOUNT_BITS/16
 
 local bn = {}
 
@@ -145,14 +146,14 @@ function main()
   local index = 0
   local input_sum = bn.new(AMOUNT_BITS, 0)
   while true do
-    local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_INPUT)
+    local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_INPUT, AMOUNT_BYTES)
     if err == -ckb.INDEX_OUT_OF_BOUND then
       break
     end
     if err ~= nil then
       return -ERROR_LOAD_CELL_DATA
     end
-    if #data * 8 ~= AMOUNT_BITS then
+    if #data < AMOUNT_BYTES then
       return -ERROR_INVALID_CELL_DATA
     end
     tmp_number:load(data)
@@ -166,17 +167,17 @@ function main()
   local index = 0
   local output_sum = bn.new(AMOUNT_BITS, 0)
   while true do
-    local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_OUTPUT)
+    local data, err = ckb.load_cell_data(index, ckb.SOURCE_GROUP_OUTPUT, AMOUNT_BYTES)
     if err == -ckb.INDEX_OUT_OF_BOUND then
       break
     end
     if err ~= nil then
       return -ERROR_LOAD_CELL_DATA
     end
-    if #data * 8 ~= AMOUNT_BITS then
+    if #data < AMOUNT_BYTES then
       return -ERROR_INVALID_CELL_DATA
     end
-    tmp_number:load(data)
+    tmp_number:load(string.sub(data, 1, AMOUNT_BYTES))
     output_sum = output_sum + tmp_number
     if output_sum.overflow then
       return -ERROR_OVERFLOWING
