@@ -99,7 +99,7 @@ local function GC()  GC1(); GC2() end
 do
   print("creating many objects")
 
-  local limit = 5000
+  local limit = 500
 
   for i = 1, limit do
     local a = {}; a = nil

@@ -934,7 +934,7 @@ do
     end
   end
 
-  for d = 1, 51, 10 do
+  for d = 1, 31, 10 do
     for l = 1, d do
       -- use coroutines to ensure complete control of the stack
       coroutine.wrap(checkdeep)(d, l)
