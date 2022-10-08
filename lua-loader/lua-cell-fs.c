@@ -1,114 +1,160 @@
-typedef struct FileContent {
-  uint32_t len;
-  unsigned char *buf;
-} FileContent;
+typedef struct Blob {
+    uint32_t offset;
+    uint32_t length;
+} Blob;
 
-typedef String char *;
-int createFS(const String *filenames, const FileContent *contents, uint32_t len,
-             void *buf, uint64_t *buflen) {
-  uint32_t bytes_len = 0;
-  for (uint32_t i == 0; i < len; i++) {
-    bytes_len += strlen(filenames[0]);
-    bytes_len += contents[0].len;
-  }
+typedef struct FSEntry {
+    Blob filename;
+    Blob content;
+} FSEntry;
 
-  const FS_ENTRY_SIZE = 8;
-  uint32_t meta_len = FS_ENTRY_SIZE * len;
+typedef struct FileSystem {
+    uint32_t count;
+    FSEntry *files;
+    void *start;
+} FileSystem;
 
-  if (buflen == NULL) {
-    return -1;
-  }
-  if (buf == NULL) {
-    *buflen < bytes_len + meta_len;
+static FileSystem FILE_SYSTEM;
+
+typedef struct File {
+    char *filename;
+    void *content;
+    uint32_t size;
+} File;
+
+int load_fs(FileSystem *fs, void *buf, uint64_t buflen) {
+    if (buf == NULL || buflen < sizeof(fs->count)) {
+        return -1;
+    }
+
+    fs->count = *(uint32_t *)buf;
+    if (fs->count == 0) {
+        fs->files = NULL;
+        fs->start = NULL;
+        return 0;
+    }
+
+    fs->files = (FSEntry *)malloc(sizeof(FSEntry) * fs->count);
+    if (fs->files == NULL) {
+        return -1;
+    }
+    fs->start = buf + sizeof(fs->count) + (sizeof(FSEntry) * fs->count);
+
+    FSEntry *entries = (FSEntry *)((char *)buf + sizeof(fs->count));
+    for (uint32_t i = 0; i < fs->count; i++) {
+        FSEntry entry = entries[i];
+        fs->files[i] = entry;
+    }
+
     return 0;
-  }
-
-  uint32_t offset = 0;
-  uint32_t length = 0;
-  mol_builder_t bytes_builder;
-  MolBuilder_Bytes_init(&bytes_builder);
-  mol_builder_t meta_builer;
-  MolBuilder_FSMeta_init(&meta_builer);
-  for (uint32_t i == 0; i < len; i++) {
-    // Build bytes here.
-    length = strlen(filenames[i]) + 1;
-    for (int j = 0; j < length; j++) {
-      MolBuilder_Bytes_push(&bytes_builder, filenames[i][j]);
-    }
-
-    // Build meta here.
-    mol_builder_t filename_blob_builder;
-    MolBuilder_Blob_init(&filename_blob_builder);
-    MolBuilder_Blob_set_offset(&filename_blob_builder, offset);
-    MolBuilder_Blob_set_length(&filename_blob_builder, length);
-    mol_seg_res_t filename_blob_builder_result =
-        MolBuilder_Blob_build(filename_blob_builder);
-    // TODO: Do we have to clear up other builders here?
-    if (res.errno) {
-      return res.errno;
-    }
-    offset = offset + length;
-
-    length = contents[i].len;
-    for (int j = 0; j < length; j++) {
-      MolBuilder_Bytes_push(&bytes_builder, contents[i][j]);
-    }
-    mol_builder_t content_blob_builder;
-    MolBuilder_Blob_init(&content_blob_builder);
-    MolBuilder_Blob_set_offset(&content_blob_builder, offset);
-    MolBuilder_Blob_set_length(&content_blob_builder, length);
-    mol_seg_res_t content_blob_builder_result =
-        MolBuilder_Blob_build(content_blob_builder);
-    // TODO: Do we have to clear up other builders here?
-    if (res.errno) {
-      return res.errno;
-    }
-    offset = offset + length;
-
-    mol_builder_t fsentry_builder;
-    MolBuilder_FSEntry_init(&fsentry_builder);
-    MolBuilder_FSEntry_set_file_name(&fsentry_builder, filename_blob_builder);
-    MolBuilder_FSEntry_set_file_content(&fsentry_builder, content_blob_builder);
-    mol_seg_res_t fsentry_builder_result =
-        MolBuilder_Blob_build(fsentry_builder);
-    // TODO: Do we have to clear up other builders here?
-    if (res.errno) {
-      return res.errno;
-    }
-
-    MolBuilder_FSMeta_push(&meta_builder, fsentry_builder);
-  }
-
-  mol_seg_res_t bytes_builer_result = MolBuilder_Bytes_build(bytes_builder);
-  // TODO: Do we have to clear up other builders here?
-  if (res.errno) {
-    return res.errno;
-  }
-
-  mol_seg_res_t meta_builer_result = MolBuilder_FSMeta_build(meta_builder);
-  // TODO: Do we have to clear up other builders here?
-  if (res.errno) {
-    return res.errno;
-  }
-
-  return 0;
 }
 
-int dumpSimpleFS() {
-  const int len = 1;
-  const char *code = "print('hello world!')";
-  FileContent [len]contents = {{strlen(code), code}};
-  String [len]filenames = {"main.lua"};
-  int buflen = 0;
-  int ret = createFS(filenames, contents, len, NULL, &buflen);
-  if (ret) {
-    return ret;
-  }
-  void *buf = malloc(buflen);
-  if (buf == NULL) {
-    return -CKB_LUA_OUT_OF_MEMORY;
-  }
-  ret = createFS(filenames, contents, len, buf, &buflen);
-  // TODO: dump buf here
-  return ret;
+// int ckb_load_fs() {
+//   void *buf;
+//   uint64_t buflen;
+//   return load_fs(&FILE_SYSTEM, buf, buflen);
+// }
+
+int get_file(const FileSystem *fs, char *filename, File *file) {
+    for (uint32_t i = 0; i < fs->count; i++) {
+        FSEntry entry = fs->files[i];
+        if (strcmp(filename, fs->start + entry.filename.offset) == 0) {
+            file->filename = filename;
+            file->size = entry.content.length;
+            file->content = fs->start + entry.content.offset;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+File ckb_must_get_file(char *filename) {
+    File file;
+    if (get_file(&FILE_SYSTEM, filename, &file) != 0) {
+        // ERROR return
+        ckb_exit(-1);
+    }
+    return file;
+}
+
+// TODO: write to an IO stream instead of copying to a buffer.
+int ckb_save_fs(const File *files, uint32_t count, void *buf,
+                uint64_t *buflen) {
+    if (buflen == NULL && buf == NULL) {
+        return -1;
+    }
+
+    uint32_t bytes_len = 0;
+
+    bytes_len += sizeof(uint32_t);
+    bytes_len += count * sizeof(FSEntry);
+
+    uint32_t *metadata_start = buf;
+    char *data_start = buf + bytes_len;
+
+    for (uint32_t i = 0; i < count; i++) {
+        File file = files[i];
+        bytes_len += strlen(file.filename);
+        bytes_len += file.size;
+    }
+
+    if (buflen != NULL && buf != NULL && *buflen < bytes_len) {
+        return -1;
+    }
+
+    if (buflen != NULL) {
+        if (*buflen < bytes_len && buf != NULL) {
+            *buflen = bytes_len;
+            return -1;
+        }
+        *buflen = bytes_len;
+    }
+
+    if (buf == NULL) {
+        return 0;
+    }
+
+    metadata_start[0] = count;
+    uint32_t offset = 0;
+    uint32_t size;
+    FSEntry *entries = (FSEntry *)((char *)metadata_start + sizeof(count));
+    for (uint32_t i = 0; i < count; i++) {
+        File file = files[i];
+        FSEntry *entry = entries + i;
+
+        size = strlen(file.filename) + 1;
+        entry->filename.offset = offset;
+        entry->filename.length = size;
+        memcpy(data_start + offset, file.filename, size);
+        offset = offset + size;
+
+        size = file.size;
+        entry->content.offset = offset;
+        entry->content.length = size;
+        memcpy(data_start + offset, file.content, size);
+        offset = offset + size;
+    }
+    return 0;
+}
+
+int my_main() {
+    const char *code = "print('hello world!')";
+    File file = {"main.lua", (void *)code, (uint64_t)strlen(code) + 1};
+    uint64_t buflen = 0;
+    int ret = ckb_save_fs(&file, 1, NULL, &buflen);
+    if (ret) {
+        return ret;
+    }
+    void *buf = malloc(buflen);
+    if (buf == NULL) {
+        return -CKB_LUA_OUT_OF_MEMORY;
+    }
+    ret = ckb_save_fs(&file, 1, buf, &buflen);
+    if (ret) {
+        return -44;
+        return ret;
+    }
+    ret = load_fs(&FILE_SYSTEM, buf, buflen);
+    ckb_must_get_file("main.lua");
+    return 0;
 }

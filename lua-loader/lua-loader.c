@@ -15,6 +15,8 @@
 
 #include "lua-ckb.c"
 
+#include "lua-cell-fs.c"
+
 #include "blockchain.h"
 #include "ckb_syscalls.h"
 #include "fs.h"
@@ -393,6 +395,7 @@ static int pmain(lua_State *L) {
 }
 
 int main(int argc, char **argv) {
+    return my_main();
     int status, result;
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {
