@@ -20,9 +20,16 @@ typedef struct CellFileSystem {
 static CellFileSystem CELL_FILE_SYSTEM;
 
 typedef struct FSFile {
-    char *filename;
-    void *content;
+    const char *filename;
+    const void *content;
     uint32_t size;
+    uint8_t rc; // indicate whether how many active users there are,
+                // may be used to avoid excessive opening of the same file
+                // currently the only valid values are 1 and 0.
 } FSFile;
+
+int get_file(const CellFileSystem *fs, const char *filename, FSFile **f);
+
+int ckb_get_file(const char *filename, FSFile **file);
 
 #endif

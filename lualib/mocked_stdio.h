@@ -18,7 +18,8 @@
 #define _IONBF 2
 
 typedef struct FILE {
-    void *placeholder;
+    FSFile *file;
+    uint32_t offset;
 } FILE;
 
 FILE *stdin;

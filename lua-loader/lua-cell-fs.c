@@ -1,4 +1,4 @@
-#include "../include/ckb_cell_fs.h"
+#include "../include/ckb_cell_fs.c"
 
 int dochunk(lua_State *L, int status);
 
@@ -31,22 +31,9 @@ int load_fs(CellFileSystem *fs, void *buf, uint64_t buflen) {
     return 0;
 }
 
-int get_file(const CellFileSystem *fs, char *filename, FSFile *file) {
-    for (uint32_t i = 0; i < fs->count; i++) {
-        FSEntry entry = fs->files[i];
-        if (strcmp(filename, fs->start + entry.filename.offset) == 0) {
-            file->filename = filename;
-            file->size = entry.content.length;
-            file->content = fs->start + entry.content.offset;
-            return 0;
-        }
-    }
-    return 1;
-}
-
-FSFile ckb_must_get_file(char *filename) {
-    FSFile file;
-    if (get_file(&CELL_FILE_SYSTEM, filename, &file) != 0) {
+FSFile *ckb_must_get_file(char *filename) {
+    FSFile *file = 0;
+    if (ckb_get_file(filename, &file) != 0) {
         exit(-1);
     }
     return file;
@@ -118,7 +105,7 @@ int evaluate_file(lua_State *L, const FSFile *file) {
 }
 
 int test_make_file_system_evaluate_code(lua_State *L, FSFile *files,
-                                          uint32_t count) {
+                                        uint32_t count) {
     int ret;
 
     uint64_t buflen = 0;
@@ -142,8 +129,8 @@ int test_make_file_system_evaluate_code(lua_State *L, FSFile *files,
         return ret;
     }
 
-    FSFile f = ckb_must_get_file("main.lua");
-    return evaluate_file(L, &f);
+    FSFile *f = ckb_must_get_file("main.lua");
+    return evaluate_file(L, f);
 }
 
 int run_sample_code_file_system(lua_State *L) {

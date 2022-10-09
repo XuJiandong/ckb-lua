@@ -50,6 +50,21 @@ static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
         ckb_exit(-1);                                                  \
     } while (0)
 
+FILE *allocfile() {
+    FILE *file = malloc(sizeof(FILE));
+    file->file = 0;
+    file->offset = 0;
+    return file;
+}
+
+void freefile(FILE *file) {
+    file->file->rc -= 1;
+    if (file->file->rc == 0) {
+        free((void *)file->file->content);
+        free((void *)file);
+    }
+}
+
 int remove(const char *__filename) {
     NOT_IMPL(remove);
     return 0;
@@ -79,7 +94,7 @@ int fclose(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9009, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(fclose);
+    freefile(stream);
     return 0;
 }
 
@@ -92,8 +107,17 @@ FILE *fopen(const char *path, const char *mode) {
     if (s_local_access_enabled) {
         return (void *)ckb_syscall(9003, path, mode, 0, 0, 0, 0);
     }
-    NOT_IMPL(fopen);
-    return 0;
+
+    FILE *file = allocfile();
+    if (file == 0) {
+        return 0;
+    }
+
+    int ret = ckb_get_file(path, &file->file);
+    if (ret != 0) {
+        return 0;
+    }
+    return file;
 }
 
 FILE *freopen(const char *path, const char *mode, FILE *stream) {
@@ -219,7 +243,19 @@ size_t fread(void *ptr, size_t size, size_t nitems, FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9005, ptr, size, nitems, stream, 0, 0);
     }
-    NOT_IMPL(fread);
+    // TODO: How do we handle error here?
+    if (stream == 0 || stream->file->rc == 0 ||
+        stream->offset == stream->file->size) {
+        return 0;
+    }
+    // TODO: handle the case size * nitems is greater than uint32_t max
+    // handle size * ntimes overflowing
+    uint32_t bytes_to_read = (uint32_t)size * (uint32_t)nitems;
+    if (bytes_to_read > stream->file->size - stream->offset) {
+        bytes_to_read = stream->file->size - stream->offset;
+    }
+    memcpy(ptr, stream->file->content + stream->offset, bytes_to_read);
+    stream->offset = stream->offset + bytes_to_read;
     return 0;
 }
 
