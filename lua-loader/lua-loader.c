@@ -150,7 +150,7 @@ static void createargtable(lua_State *L, char **argv, int argc, int script) {
     lua_setglobal(L, "arg");
 }
 
-static int dochunk(lua_State *L, int status) {
+int dochunk(lua_State *L, int status) {
     if (status == LUA_OK) status = docall(L, 0, 0);
     return report(L, status);
 }
@@ -256,6 +256,7 @@ static int pushargs(lua_State *L) {
 #define has_error 1 /* bad option */
 #define has_e 8     /* -e */
 #define has_r 4     /* -r */
+#define has_f 16    /* -f, for file system test*/
 /*
 ** Traverses all arguments from 'argv', returning a mask with those
 ** needed before running any Lua code (or an error code if it finds
@@ -281,6 +282,9 @@ static int collectargs(char **argv, int *first) {
                 break;
             case 'r':
                 args |= has_r;
+                break;
+            case 'f':
+                args |= has_f;
                 break;
             default: /* invalid option */
                 return has_error;
@@ -380,6 +384,9 @@ static int pmain(lua_State *L) {
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
     if (!runargs(L, argv, script))         /* execute arguments -e and -l */
         return 0;                          /* something failed */
+    if (args & has_f) {
+        if (!run_from_file_system(L)) return 0;
+    }
     if (args & has_r) {
         if (!run_from_file(L)) return 0;
     }
@@ -394,7 +401,6 @@ static int pmain(lua_State *L) {
 }
 
 int main(int argc, char **argv) {
-    return my_main();
     int status, result;
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {

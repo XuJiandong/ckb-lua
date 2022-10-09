@@ -22,6 +22,8 @@ typedef struct File {
     uint32_t size;
 } File;
 
+int dochunk(lua_State *L, int status);
+
 int load_fs(FileSystem *fs, void *buf, uint64_t buflen) {
     if (buf == NULL || buflen < sizeof(fs->count)) {
         return -1;
@@ -137,24 +139,51 @@ int ckb_save_fs(const File *files, uint32_t count, void *buf,
     return 0;
 }
 
-int my_main() {
-    const char *code = "print('hello world!')";
-    File file = {"main.lua", (void *)code, (uint64_t)strlen(code) + 1};
+int evaluate_file(lua_State *L, const File *file) {
+    return dochunk(L, luaL_loadbuffer(L, file->content, file->size,
+                                      "=(read file system)"));
+}
+
+int test_make_file_system_evaluate_code(lua_State *L, File *files,
+                                          uint32_t count) {
+    int ret;
+
     uint64_t buflen = 0;
-    int ret = ckb_save_fs(&file, 1, NULL, &buflen);
+    ret = ckb_save_fs(files, count, NULL, &buflen);
     if (ret) {
         return ret;
     }
+
     void *buf = malloc(buflen);
     if (buf == NULL) {
         return -CKB_LUA_OUT_OF_MEMORY;
     }
-    ret = ckb_save_fs(&file, 1, buf, &buflen);
+
+    ret = ckb_save_fs(files, count, buf, &buflen);
     if (ret) {
-        return -44;
         return ret;
     }
+
     ret = load_fs(&FILE_SYSTEM, buf, buflen);
-    ckb_must_get_file("main.lua");
-    return 0;
+    if (ret) {
+        return ret;
+    }
+
+    File f = ckb_must_get_file("main.lua");
+    return evaluate_file(L, &f);
+}
+
+int run_sample_code_file_system(lua_State *L) {
+    const char *code = "print('hello world!')";
+    File file = {"main.lua", (void *)code, (uint64_t)strlen(code)};
+    return test_make_file_system_evaluate_code(L, &file, 1);
+}
+
+static int run_from_file_system(lua_State *L) {
+    int status;
+    status = run_sample_code_file_system(L);
+    if (status != LUA_OK) {
+        return 0;
+    }
+    return 1;
 }
