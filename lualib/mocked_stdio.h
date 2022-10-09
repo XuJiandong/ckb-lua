@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../include/ckb_cell_fs.h"
+
 #define BUFSIZ 512
 #define EOF (-1)
 #define SEEK_SET 0
