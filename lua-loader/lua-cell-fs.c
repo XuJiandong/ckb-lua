@@ -139,9 +139,30 @@ int run_sample_code_file_system(lua_State *L) {
     return test_make_file_system_evaluate_code(L, &file, 1);
 }
 
+int run_code_with_modules(lua_State *L) {
+    const char *main = "require'mymodule'.foo()";
+    const char *module =
+        "local mymodule = {}"
+        "function mymodule.foo()"
+        "    print('hello world!')"
+        "end"
+        "return mymodule";
+    FSFile files[2];
+    FSFile mainf = {"main.lua", (void *)main, (uint64_t)strlen(main)};
+    FSFile modulef = {"./mymodule.lua", (void *)module,
+                      (uint64_t)strlen(module)};
+    files[0] = mainf;
+    files[1] = modulef;
+    return test_make_file_system_evaluate_code(L, files, 2);
+}
+
 static int run_from_file_system(lua_State *L) {
     int status;
     status = run_sample_code_file_system(L);
+    if (status != LUA_OK) {
+        return 0;
+    }
+    status = run_code_with_modules(L);
     if (status != LUA_OK) {
         return 0;
     }

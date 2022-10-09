@@ -60,7 +60,6 @@ FILE *allocfile() {
 void freefile(FILE *file) {
     file->file->rc -= 1;
     if (file->file->rc == 0) {
-        free((void *)file->file->content);
         free((void *)file);
     }
 }
