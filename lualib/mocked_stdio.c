@@ -176,17 +176,16 @@ int fgetc(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(fgetc);
-    return 0;
+    if (stream == 0 || stream->file->rc == 0 ||
+        stream->offset == stream->file->size) {
+        return -1;  // EOF
+    }
+    unsigned char *c = (unsigned char *)stream->file->content + stream->offset;
+    stream->offset++;
+    return *c;
 }
 
-int getc(FILE *stream) {
-    if (s_local_access_enabled) {
-        return ckb_syscall(9008, stream, 0, 0, 0, 0, 0);
-    }
-    NOT_IMPL(getc);
-    return 0;
-}
+int getc(FILE *stream) { return fgetc(stream); }
 
 int getchar(void) {
     NOT_IMPL(getchar);
@@ -287,7 +286,9 @@ int feof(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9006, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(feof);
+    if (stream->offset == stream->file->size) {
+        return 1;
+    }
     return 0;
 }
 
@@ -295,7 +296,9 @@ int ferror(FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9007, stream, 0, 0, 0, 0, 0);
     }
-    NOT_IMPL(ferror);
+    if (stream == 0 || stream->file->rc == 0) {
+        return 1;
+    }
     return 0;
 }
 
