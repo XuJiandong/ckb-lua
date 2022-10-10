@@ -23,9 +23,9 @@ typedef struct FSFile {
     const char *filename;
     const void *content;
     uint32_t size;
-    uint8_t rc; // indicate whether how many active users there are,
-                // may be used to avoid excessive opening of the same file
-                // currently the only valid values are 1 and 0.
+    // indicate how many active users there are, used to avoid excessive opening
+    // of the same file currently the only valid values are 1 and 0.
+    uint8_t rc;
 } FSFile;
 
 int get_file(const CellFileSystem *fs, const char *filename, FSFile **f);

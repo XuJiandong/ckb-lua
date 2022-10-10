@@ -5,8 +5,8 @@
 
 int get_file(const CellFileSystem *fs, const char *filename, FSFile **f) {
     FSFile *file = malloc(sizeof(FSFile));
-    if (file ==0) {
-      return -1;
+    if (file == 0) {
+        return -1;
     }
     for (uint32_t i = 0; i < fs->count; i++) {
         FSEntry entry = fs->files[i];

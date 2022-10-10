@@ -59,9 +59,7 @@ FILE *allocfile() {
 
 void freefile(FILE *file) {
     file->file->rc -= 1;
-    if (file->file->rc == 0) {
-        free((void *)file);
-    }
+    free((void *)file);
 }
 
 int remove(const char *__filename) {
