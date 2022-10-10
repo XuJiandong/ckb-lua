@@ -142,11 +142,11 @@ int run_sample_code_file_system(lua_State *L) {
 int run_code_with_modules(lua_State *L) {
     const char *main = "require'mymodule'.foo()";
     const char *module =
-        "local mymodule = {}"
-        "function mymodule.foo()"
-        "    print('hello world!')"
-        "end"
-        "return mymodule";
+        "local mymodule = {}\n"
+        "function mymodule.foo()\n"
+        "    print('hello world!')\n"
+        "end\n"
+        "return mymodule\n";
     FSFile files[2];
     FSFile mainf = {"main.lua", (void *)main, (uint64_t)strlen(main)};
     FSFile modulef = {"./mymodule.lua", (void *)module,

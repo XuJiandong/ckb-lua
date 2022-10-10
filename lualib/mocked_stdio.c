@@ -254,7 +254,9 @@ size_t fread(void *ptr, size_t size, size_t nitems, FILE *stream) {
     }
     memcpy(ptr, stream->file->content + stream->offset, bytes_to_read);
     stream->offset = stream->offset + bytes_to_read;
-    return 0;
+    // The return value should be the number of items written to the ptr
+    uint32_t s = size;
+    return (bytes_to_read + s - 1) / s;
 }
 
 size_t fwrite(const void *__ptr, size_t __size, size_t __n, FILE *__s) {
