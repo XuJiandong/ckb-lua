@@ -11,6 +11,7 @@ int get_file(const CellFileSystem *fs, const char *filename, FSFile **f) {
     for (uint32_t i = 0; i < fs->count; i++) {
         FSEntry entry = fs->files[i];
         if (strcmp(filename, fs->start + entry.filename.offset) == 0) {
+            // TODO: check the memory addresses are legal
             file->filename = filename;
             file->size = entry.content.length;
             file->content = fs->start + entry.content.offset;
