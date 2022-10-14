@@ -122,8 +122,7 @@ int run_code_with_modules(lua_State *L) {
         "return mymodule\n";
     FSFile files[2];
     FSFile mainf = {"main.lua", (void *)main, (uint64_t)strlen(main)};
-    FSFile modulef = {"./mymodule.lua", (void *)module,
-                      (uint64_t)strlen(module)};
+    FSFile modulef = {"mymodule.lua", (void *)module, (uint64_t)strlen(module)};
     files[0] = mainf;
     files[1] = modulef;
     return test_make_file_system_evaluate_code(L, files, 2);
