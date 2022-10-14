@@ -4,33 +4,6 @@ int dochunk(lua_State *L, int status);
 
 int exit(int c);
 
-int load_fs(CellFileSystem *fs, void *buf, uint64_t buflen) {
-    if (buf == NULL || buflen < sizeof(fs->count)) {
-        return -1;
-    }
-
-    fs->count = *(uint32_t *)buf;
-    if (fs->count == 0) {
-        fs->files = NULL;
-        fs->start = NULL;
-        return 0;
-    }
-
-    fs->files = (FSEntry *)malloc(sizeof(FSEntry) * fs->count);
-    if (fs->files == NULL) {
-        return -1;
-    }
-    fs->start = buf + sizeof(fs->count) + (sizeof(FSEntry) * fs->count);
-
-    FSEntry *entries = (FSEntry *)((char *)buf + sizeof(fs->count));
-    for (uint32_t i = 0; i < fs->count; i++) {
-        FSEntry entry = entries[i];
-        fs->files[i] = entry;
-    }
-
-    return 0;
-}
-
 FSFile *ckb_must_get_file(char *filename) {
     FSFile *file = 0;
     if (ckb_get_file(filename, &file) != 0) {
@@ -124,7 +97,7 @@ int test_make_file_system_evaluate_code(lua_State *L, FSFile *files,
         return ret;
     }
 
-    ret = load_fs(&CELL_FILE_SYSTEM, buf, buflen);
+    ret = ckb_load_fs(buf, buflen);
     if (ret) {
         return ret;
     }

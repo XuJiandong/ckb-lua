@@ -26,3 +26,40 @@ int get_file(const CellFileSystem *fs, const char *filename, FSFile **f) {
 int ckb_get_file(const char *filename, FSFile **file) {
     return get_file(&CELL_FILE_SYSTEM, filename, file);
 }
+
+int load_fs(CellFileSystem *fs, void *buf, uint64_t buflen) {
+    if (buf == NULL || buflen < sizeof(fs->count)) {
+        return -1;
+    }
+
+    fs->count = *(uint32_t *)buf;
+    if (fs->count == 0) {
+        fs->files = NULL;
+        fs->start = NULL;
+        return 0;
+    }
+
+    fs->files = (FSEntry *)malloc(sizeof(FSEntry) * fs->count);
+    if (fs->files == NULL) {
+        return -1;
+    }
+    fs->start = buf + sizeof(fs->count) + (sizeof(FSEntry) * fs->count);
+
+    FSEntry *entries = (FSEntry *)((char *)buf + sizeof(fs->count));
+    for (uint32_t i = 0; i < fs->count; i++) {
+        FSEntry entry = entries[i];
+        fs->files[i] = entry;
+    }
+
+    return 0;
+}
+
+int ckb_load_fs(void *buf, uint64_t buflen) {
+    CellFileSystem fs;
+    int ret = load_fs(&fs, buf, buflen);
+    if (ret != 0) {
+        return ret;
+    }
+    CELL_FILE_SYSTEM = fs;
+    return 0;
+}
