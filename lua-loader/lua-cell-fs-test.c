@@ -1,3 +1,4 @@
+#include "lua-ckb.h"
 
 int dochunk(lua_State *L, int status);
 

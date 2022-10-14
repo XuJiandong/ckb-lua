@@ -3,6 +3,10 @@
 
 #include "ckb_cell_fs.h"
 
+// TODO: use a linked list of CellFileSystem so that we can use files from
+// multiple cells
+static CellFileSystem CELL_FILE_SYSTEM;
+
 int get_file(const CellFileSystem *fs, const char *filename, FSFile **f) {
     FSFile *file = malloc(sizeof(FSFile));
     if (file == 0) {

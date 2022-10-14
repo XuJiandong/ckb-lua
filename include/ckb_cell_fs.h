@@ -17,10 +17,6 @@ typedef struct CellFileSystem {
     void *start;
 } CellFileSystem;
 
-// TODO: use a linked list of CellFileSystem so that we can use files from
-// multiple cells
-static CellFileSystem CELL_FILE_SYSTEM;
-
 typedef struct FSFile {
     const char *filename;
     const void *content;

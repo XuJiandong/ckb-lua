@@ -1,6 +1,9 @@
 
 #include "mocked_stdio.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 FILE *stdin;
 FILE *stdout;
 FILE *stderr;

@@ -13,6 +13,7 @@
 #include "lua.h"
 #include "lualib.h"
 
+#include "lua-ckb.h"
 #include "lua-ckb.c"
 
 #include "lua-cell-fs.c"
