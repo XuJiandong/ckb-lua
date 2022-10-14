@@ -235,13 +235,26 @@ int ungetc(int __c, FILE *__stream) {
     return 0;
 }
 
+int isvalidfile(FILE *stream) {
+    if (stream == 0 || stream->file->rc == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+void mustbevaildfile(FILE *stream) {
+    if (isvalidfile(stream) != 0) {
+        ckb_exit(1);
+    }
+}
+
 size_t fread(void *ptr, size_t size, size_t nitems, FILE *stream) {
     if (s_local_access_enabled) {
         return ckb_syscall(9005, ptr, size, nitems, stream, 0, 0);
     }
+    mustbevaildfile(stream);
     // TODO: How do we handle error here?
-    if (stream == 0 || stream->file->rc == 0 ||
-        stream->offset == stream->file->size) {
+    if (stream->offset == stream->file->size) {
         return 0;
     }
     // TODO: handle the case size * nitems is greater than uint32_t max
