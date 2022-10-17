@@ -281,7 +281,7 @@ static int pushargs(lua_State *L) {
 #define has_e 8     /* -e */
 #define has_r 4     /* -r */
 #define has_f 16    /* -f, to enable file system support */
-#define has_t 32    /* -f, for file system tests */
+#define has_t 32    /* -t, for file system tests */
 /*
 ** Traverses all arguments from 'argv', returning a mask with those
 ** needed before running any Lua code (or an error code if it finds
@@ -363,10 +363,7 @@ static int run_from_file(lua_State *L) {
     }
     buf[count] = 0;
     int status = dochunk(L, luaL_loadbuffer(L, buf, count, "=(read file)"));
-    if (status != LUA_OK)
-        return 0;
-    else
-        return 1;
+    return status;
 }
 
 /*

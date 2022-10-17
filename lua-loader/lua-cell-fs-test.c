@@ -132,11 +132,11 @@ static int run_file_system_tests(lua_State *L) {
     int status;
     status = run_code_from_file_system(L);
     if (status != LUA_OK) {
-        return 0;
+        return status;
     }
     status = run_code_with_modules(L);
     if (status != LUA_OK) {
-        return 0;
+        return status;
     }
-    return 1;
+    return 0;
 }
