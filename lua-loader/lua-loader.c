@@ -30,6 +30,9 @@ int exit(int c) {
 }
 void enable_local_access(int b);
 
+static int s_fs_access_enabled = 0;
+void enable_fs_access(int b) { s_fs_access_enabled = b; }
+
 void abort() { ckb_exit(-1); }
 
 #if !defined(LUA_PROGNAME)
@@ -160,6 +163,26 @@ static int dostring(lua_State *L, const char *s, const char *name) {
     return dochunk(L, luaL_loadbuffer(L, s, strlen(s), name));
 }
 
+int load_lua_code(lua_State *L, char *buf, size_t buflen) {
+    if (!s_fs_access_enabled) {
+        return dochunk(L, luaL_loadbuffer(L, buf, buflen, __func__));
+    }
+
+    char *filename = "main.lua";
+    int ret = ckb_load_fs(buf, buflen);
+    if (ret) {
+        return ret;
+    }
+
+    FSFile *file = NULL;
+    ret = ckb_get_file(filename, &file);
+    if (ret) {
+        return ret;
+    }
+
+    return dochunk(L, luaL_loadbuffer(L, file->content, file->size, filename));
+}
+
 int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
                             const uint8_t *code_hash, uint8_t hash_type) {
     size_t index = 0;
@@ -181,7 +204,7 @@ int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
     if (ret) {
         return ret;
     }
-    return dochunk(L, luaL_loadbuffer(L, buf, buflen, __func__));
+    return load_lua_code(L, buf, buflen);
 }
 
 #define SCRIPT_SIZE 32768
@@ -257,7 +280,8 @@ static int pushargs(lua_State *L) {
 #define has_error 1 /* bad option */
 #define has_e 8     /* -e */
 #define has_r 4     /* -r */
-#define has_f 16    /* -f, for file system test*/
+#define has_f 16    /* -f, to enable file system support */
+#define has_t 32    /* -f, for file system tests */
 /*
 ** Traverses all arguments from 'argv', returning a mask with those
 ** needed before running any Lua code (or an error code if it finds
@@ -286,6 +310,9 @@ static int collectargs(char **argv, int *first) {
                 break;
             case 'f':
                 args |= has_f;
+                break;
+            case 't':
+                args |= has_t;
                 break;
             default: /* invalid option */
                 return has_error;
@@ -385,17 +412,24 @@ static int pmain(lua_State *L) {
     lua_gc(L, LUA_GCGEN, 0, 0);            /* GC in generational mode */
     if (!runargs(L, argv, script))         /* execute arguments -e and -l */
         return 0;                          /* something failed */
+    int ret;
     if (args & has_f) {
-        if (!run_from_file_system(L)) return 0;
+        enable_fs_access(1);
+    }
+    if (args & has_t) {
+        enable_fs_access(1);
+        ret = run_from_file_system(L);
+        goto exit;
     }
     if (args & has_r) {
-        if (!run_from_file(L)) return 0;
+        ret = run_from_file(L);
+        goto exit;
     }
-    // No arguments found, trying to load lua code from cell data
-    // Note we don't push program name to argv, thus we check argc == 0 instead
-    // of argc = 1
-    if (argc == 0) {
-        if (load_lua_code_from_cell_data(L)) return 0;
+    ret = load_lua_code_from_cell_data(L);
+exit:
+    // Error happened, push no arguments to the stack.
+    if (ret) {
+        return 0;
     }
     lua_pushboolean(L, 1); /* signal no errors */
     return 1;
