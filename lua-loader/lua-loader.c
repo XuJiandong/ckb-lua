@@ -168,19 +168,13 @@ int load_lua_code(lua_State *L, char *buf, size_t buflen) {
         return dochunk(L, luaL_loadbuffer(L, buf, buflen, __func__));
     }
 
-    char *filename = "main.lua";
     int ret = ckb_load_fs(buf, buflen);
     if (ret) {
         return ret;
     }
 
-    FSFile *file = NULL;
-    ret = ckb_get_file(filename, &file);
-    if (ret) {
-        return ret;
-    }
-
-    return dochunk(L, luaL_loadbuffer(L, file->content, file->size, filename));
+    static const char *FILENAME = "main.lua";
+    return dochunk(L, luaL_loadfile(L, FILENAME));
 }
 
 int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
