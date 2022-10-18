@@ -29,7 +29,7 @@ int ckb_save_fs(const FSFile *files, uint32_t count, void *buf,
 
     for (uint32_t i = 0; i < count; i++) {
         FSFile file = files[i];
-        bytes_len += strlen(file.filename);
+        bytes_len += strlen(file.filename) + 1;
         bytes_len += file.size;
     }
 
