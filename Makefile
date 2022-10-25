@@ -1,4 +1,5 @@
 
+CURRENT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TARGET := riscv64-unknown-linux-gnu
 CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
@@ -8,17 +9,25 @@ CFLAGS := -fPIC -O3 -fno-builtin -nostdinc -nostdlib -nostartfiles -fvisibility=
 
 LDFLAGS := -nostdlib -nostartfiles -fno-builtin -Wl,-static -fdata-sections -ffunction-sections -Wl,--gc-sections
 
+DOCKER_USER := $(shell id -u):$(shell id -g)
+DOCKER_EXTRA_FLAGS ?=
 # docker pull nervos/ckb-riscv-gnu-toolchain:gnu-bionic-20191012
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 PORT ?= 9999
 
-all: lualib/liblua.a build/lua-loader build/libckblua.so
+all: lualib/liblua.a build/lua-loader build/libckblua.so build/dylibtest
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
 
+docker-interactive:
+	docker run --user ${DOCKER_USER} --rm -it -v "${CURRENT_DIR}:/code" --workdir /code --entrypoint /bin/bash ${DOCKER_EXTRA_FLAGS} ${BUILDER_DOCKER}
+
 lualib/liblua.a:
 	make -C lualib liblua.a
+
+build/dylibtest: lua-loader/dylibtest.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
 build/lua-loader.o: lua-loader/lua-loader.c
 	$(CC) -c $(CFLAGS) -o $@ $<

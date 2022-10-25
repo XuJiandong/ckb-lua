@@ -2,6 +2,4 @@
 #include "lua-loader.c"
 #include "libckblua.h"
 
-void dylib_hello_world() {
-    printf("hello world %s\n", __func__);
-}
+void dylib_hello_world() { printf("hello world %s\n", __func__); }
