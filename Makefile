@@ -28,9 +28,10 @@ build/lua-loader.o: lua-loader/lua-loader.c
 # Also note libgcc.a must be appended to the file list, simply -lgcc does not for some reason.
 # It seems gcc does not search libgcc in the install path.
 build/lua-loader: build/lua-loader.o lualib/liblua.a
-	$(LD) $(LDFLAGS) -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(LD) $(LDFLAGS) -fPIC -fPIE -pie -Wl,--dynamic-list lua-loader/lua-loader.syms -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
+	cp $@ build/libckblua.so
 
 fmt:
 	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h
@@ -39,6 +40,7 @@ clean-local:
 	rm -f build/*.o
 	rm -f build/lua-loader
 	rm -f build/lua-loader.debug
+	rm -f build/libckblua.so
 
 clean: clean-local
 	make -C lualib clean
