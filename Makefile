@@ -12,7 +12,7 @@ LDFLAGS := -nostdlib -nostartfiles -fno-builtin -Wl,-static -fdata-sections -ffu
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 PORT ?= 9999
 
-all: lualib/liblua.a build/lua-loader
+all: lualib/liblua.a build/lua-loader build/libckblua.so
 
 all-via-docker:
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
@@ -28,10 +28,14 @@ build/lua-loader.o: lua-loader/lua-loader.c
 # Also note libgcc.a must be appended to the file list, simply -lgcc does not for some reason.
 # It seems gcc does not search libgcc in the install path.
 build/lua-loader: build/lua-loader.o lualib/liblua.a
-	$(LD) $(LDFLAGS) -fPIC -fPIE -pie -Wl,--dynamic-list lua-loader/lua-loader.syms -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(LD) $(LDFLAGS) -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
-	cp $@ build/libckblua.so
+
+build/libckblua.so: build/lua-loader.o lualib/liblua.a
+	$(LD) $(LDFLAGS) -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	cp $@ $@.debug
+	$(OBJCOPY) --strip-debug --strip-all $@
 
 fmt:
 	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h

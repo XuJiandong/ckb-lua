@@ -442,7 +442,3 @@ int main(int argc, char **argv) {
     lua_close(L);
     return (result && status == LUA_OK) ? 0 : -1;
 }
-
-__attribute__((visibility("default"))) void dynlib_hello_world() {
-    printf("hello world %s\n", __func__);
-}
