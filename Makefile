@@ -52,8 +52,9 @@ fmt:
 clean-local:
 	rm -f build/*.o
 	rm -f build/lua-loader
-	rm -f build/lua-loader.debug
-	rm -f build/libckblua.so
+	rm -f build/lua-loader*
+	rm -f build/libckblua*
+	rm -f build/dylibtest
 
 clean: clean-local
 	make -C lualib clean
