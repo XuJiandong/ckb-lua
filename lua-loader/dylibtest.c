@@ -17,7 +17,7 @@ int ckb_exit(signed char);
 #include "ckb_consts.h"
 
 #define MAX_CODE_SIZE (1024 * 1024)
-#define EXPORTED_FUNC_NAME "validate_secp256k1_blake2b_sighash_all"
+#define EXPORTED_FUNC_NAME "dylib_hello_world"
 #define SCRIPT_SIZE (32 * 1024)
 
 #define RESERVED_ARGS_SIZE 2
