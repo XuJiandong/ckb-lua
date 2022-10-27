@@ -121,6 +121,7 @@ int main() {
     err = load_validate_func(code_buff, &code_buff_size, code_hash, hash_type,
                              &func);
     CHECK(err);
+    printf("running validate func\n");
     int result = func();
     printf("running function result %d\n", result);
 exit:
