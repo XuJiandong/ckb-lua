@@ -24,7 +24,7 @@ int ckb_exit(signed char);
 #define BLAKE2B_BLOCK_SIZE 32
 #define HASH_TYPE_SIZE 1
 
-typedef void (*HelloWorldFuncType)();
+typedef int (*HelloWorldFuncType)();
 
 enum ErrorCode {
     // 0 is the only success code. We can use 0 directly.
@@ -121,7 +121,8 @@ int main() {
     err = load_validate_func(code_buff, &code_buff_size, code_hash, hash_type,
                              &func);
     CHECK(err);
-    func();
+    int result = func();
+    printf("running function result %d\n", result);
 exit:
     return err;
 }
