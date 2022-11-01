@@ -45,47 +45,7 @@ enum ErrorCode {
     ERROR_INVALID_ARGS_FORMAT,
 };
 
-// functions
-int load_validate_func(uint8_t* code_buff, uint32_t* code_buff_size,
-                       const uint8_t* hash, uint8_t hash_type,
-                       HelloWorldFuncType* func) {
-    int err = 0;
-    void* handle = NULL;
-    size_t consumed_size = 0;
-
-    printf("opening dynamic library\n");
-    err = ckb_dlopen2(hash, hash_type, code_buff, *code_buff_size, &handle,
-                      &consumed_size);
-    if (err != 0) {
-        printf("dl_opening error: %d\n", err);
-        return err;
-    }
-    if (handle == NULL) {
-        printf("dl_opening error, can not load library\n");
-        err = ERROR_CANT_LOAD_LIB;
-        goto exit;
-    }
-    if (consumed_size % RISCV_PGSIZE != 0) {
-        printf("dl_opening error, library malformed\n");
-        err = ERROR_LIB_MALFORMED;
-        goto exit;
-    }
-    *code_buff_size = consumed_size;
-
-    printf("finding symbol %s\n", EXPORTED_FUNC_NAME);
-    *func = (HelloWorldFuncType)ckb_dlsym(handle, EXPORTED_FUNC_NAME);
-    if (*func == NULL) {
-        printf("dl_opening error, can't find symbol\n");
-        err = ERROR_CANT_FIND_SYMBOL;
-        goto exit;
-    }
-
-    err = 0;
-exit:
-    return err;
-}
-
-int main() {
+int get_dylib_handle(void** handle) {
     unsigned char script[SCRIPT_SIZE];
     uint64_t len = SCRIPT_SIZE;
     printf("loading script\n");
@@ -95,8 +55,8 @@ int main() {
         goto exit;
     }
     if (len > SCRIPT_SIZE) {
-      err =  ERROR_SCRIPT_TOO_LONG;
-      goto exit;
+        err = ERROR_SCRIPT_TOO_LONG;
+        goto exit;
     }
 
     mol_seg_t script_seg;
@@ -130,18 +90,51 @@ int main() {
     // https://github.com/nervosnetwork/ckb-vm/blob/d43f58d6bf8cc6210721fdcdb6e5ecba513ade0c/src/machine/elf_adaptor.rs#L28-L32
     // The code can't be loaded into freezed memory.
     uint8_t code_buff[MAX_CODE_SIZE] __attribute__((aligned(RISCV_PGSIZE)));
-    uint32_t code_buff_size = MAX_CODE_SIZE;
+    size_t code_buff_size = MAX_CODE_SIZE;
+    size_t consumed_size = 0;
 
-    HelloWorldFuncType func;
-    printf("loading validate function\n");
-    err = load_validate_func(code_buff, &code_buff_size, code_hash, hash_type,
-                             &func);
+    printf("opening dynamic library\n");
+    err = ckb_dlopen2(code_hash, hash_type, code_buff, code_buff_size, handle,
+                      &consumed_size);
     if (err != 0) {
+        printf("dl_opening error: %d\n", err);
+        return err;
+    }
+    if (handle == NULL) {
+        printf("dl_opening error, can not load library\n");
+        err = ERROR_CANT_LOAD_LIB;
         goto exit;
     }
+    if (consumed_size % RISCV_PGSIZE != 0) {
+        printf("dl_opening error, library malformed\n");
+        err = ERROR_LIB_MALFORMED;
+        goto exit;
+    }
+exit:
+    return err;
+}
+
+void must_get_dylib_handle(void** handle) {
+    int err = get_dylib_handle(handle);
+    if (err != 0) {
+        ckb_exit(err);
+    }
+}
+
+void* must_load_function(void* handle, char* name) {
+    void* func = ckb_dlsym(handle, name);
+    if (func == NULL) {
+        printf("dl_opening error, can't find symbol\n");
+        ckb_exit(ERROR_CANT_FIND_SYMBOL);
+    }
+    return func;
+}
+
+int main() {
+    void* handle;
+    must_get_dylib_handle(&handle);
+    HelloWorldFuncType func = must_load_function(handle, EXPORTED_FUNC_NAME);
     printf("running validate function\n");
     int result = func();
     printf("running function result %d\n", result);
-exit:
-    return err;
 }
