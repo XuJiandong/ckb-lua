@@ -45,23 +45,6 @@ enum ErrorCode {
     ERROR_INVALID_ARGS_FORMAT,
 };
 
-#define CHECK2(cond, code) \
-    do {                   \
-        if (!(cond)) {     \
-            err = code;    \
-            goto exit;     \
-        }                  \
-    } while (0)
-
-#define CHECK(_code)        \
-    do {                    \
-        int code = (_code); \
-        if (code != 0) {    \
-            err = code;     \
-            goto exit;      \
-        }                   \
-    } while (0)
-
 // functions
 int load_validate_func(uint8_t* code_buff, uint32_t* code_buff_size,
                        const uint8_t* hash, uint8_t hash_type,
@@ -70,15 +53,32 @@ int load_validate_func(uint8_t* code_buff, uint32_t* code_buff_size,
     void* handle = NULL;
     size_t consumed_size = 0;
 
+    printf("opening dynamic library\n");
     err = ckb_dlopen2(hash, hash_type, code_buff, *code_buff_size, &handle,
                       &consumed_size);
-    CHECK(err);
-    CHECK2(handle != NULL, ERROR_CANT_LOAD_LIB);
-    CHECK2(consumed_size % RISCV_PGSIZE == 0, ERROR_LIB_MALFORMED);
+    if (err != 0) {
+        printf("dl_opening error: %d\n", err);
+        return err;
+    }
+    if (handle != NULL) {
+        printf("dl_opening error, can not load library\n");
+        err = ERROR_CANT_LOAD_LIB;
+        goto exit;
+    }
+    if (consumed_size % RISCV_PGSIZE != 0) {
+        printf("dl_opening error, library malformed\n");
+        err = ERROR_LIB_MALFORMED;
+        goto exit;
+    }
     *code_buff_size = consumed_size;
 
+    printf("finding symbol %s\n", EXPORTED_FUNC_NAME);
     *func = (HelloWorldFuncType)ckb_dlsym(handle, EXPORTED_FUNC_NAME);
-    CHECK2(*func != NULL, ERROR_CANT_FIND_SYMBOL);
+    if (*func == NULL) {
+        printf("dl_opening error, can't find symbol\n");
+        err = ERROR_CANT_FIND_SYMBOL;
+        goto exit;
+    }
 
     err = 0;
 exit:
@@ -88,24 +88,39 @@ exit:
 int main() {
     unsigned char script[SCRIPT_SIZE];
     uint64_t len = SCRIPT_SIZE;
+    printf("loading script\n");
     int err = ckb_load_script(script, &len, 0);
-    CHECK(err);
-    CHECK2(len < SCRIPT_SIZE, ERROR_SCRIPT_TOO_LONG);
+    if (err != 0) {
+        printf("loading script error %d\n", err);
+        goto exit;
+    }
+    if (len > SCRIPT_SIZE) {
+      err =  ERROR_SCRIPT_TOO_LONG;
+      goto exit;
+    }
 
     mol_seg_t script_seg;
     script_seg.ptr = (uint8_t*)script;
     script_seg.size = len;
 
-    CHECK2(MolReader_Script_verify(&script_seg, false) == MOL_OK,
-           ERROR_ENCODING);
+    printf("verifiying script\n");
+    if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
+        err = ERROR_ENCODING;
+        goto exit;
+    }
 
     // The script arguments are in the following format
     // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
     // <hash type of lua code, 1 byte> <lua script args, variable length>
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
-    CHECK2(args_bytes_seg.size >= RESERVED_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + HASH_TYPE_SIZE,
-           ERROR_INVALID_ARGS_FORMAT);
+
+    if (args_bytes_seg.size <
+        RESERVED_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + HASH_TYPE_SIZE) {
+        err = ERROR_INVALID_ARGS_FORMAT;
+        goto exit;
+    }
+
     uint8_t* code_hash = args_bytes_seg.ptr + RESERVED_ARGS_SIZE;
     uint8_t hash_type =
         *(args_bytes_seg.ptr + RESERVED_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
@@ -118,10 +133,13 @@ int main() {
     uint32_t code_buff_size = MAX_CODE_SIZE;
 
     HelloWorldFuncType func;
+    printf("loading validate function\n");
     err = load_validate_func(code_buff, &code_buff_size, code_hash, hash_type,
                              &func);
-    CHECK(err);
-    printf("running validate func\n");
+    if (err != 0) {
+        goto exit;
+    }
+    printf("running validate function\n");
     int result = func();
     printf("running function result %d\n", result);
 exit:
