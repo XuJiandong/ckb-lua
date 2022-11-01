@@ -426,6 +426,8 @@ exit:
     return 1;
 }
 
+__attribute__((visibility("default"))) int dylib_hello_world() { return 42; }
+
 int main(int argc, char **argv) {
     int status, result;
     lua_State *L = luaL_newstate(); /* create state */

@@ -5,7 +5,7 @@ CC := $(TARGET)-gcc
 LD := $(TARGET)-gcc
 OBJCOPY := $(TARGET)-objcopy
 
-CFLAGS := -fPIC -O3 -fno-builtin -nostdinc -nostdlib -nostartfiles -fvisibility=hidden -fdata-sections -ffunction-sections -I lualib -I include/ckb-c-stdlib -I include/ckb-c-stdlib/libc -I include/ckb-c-stdlib/molecule -Wall -Werror -Wno-nonnull -Wno-nonnull-compare -Wno-unused-function -g
+CFLAGS := -fPIC -fPIE -pie -O3 -fno-builtin -nostdinc -nostdlib -nostartfiles -fvisibility=hidden -fdata-sections -ffunction-sections -I lualib -I include/ckb-c-stdlib -I include/ckb-c-stdlib/libc -I include/ckb-c-stdlib/molecule -Wall -Werror -Wno-nonnull -Wno-nonnull-compare -Wno-unused-function -g
 
 LDFLAGS := -nostdlib -nostartfiles -fno-builtin -Wl,-static -fdata-sections -ffunction-sections -Wl,--gc-sections
 
@@ -42,7 +42,7 @@ build/lua-loader: build/lua-loader.o lualib/liblua.a
 	$(OBJCOPY) --strip-debug --strip-all $@
 
 build/libckblua.so: build/lua-loader.o lualib/liblua.a
-	$(LD) $(LDFLAGS) -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(LD) $(LDFLAGS) -v -D__SHARED_LIBRARY__ -fPIC -fPIE -pie -Wl,--dynamic-list lua-loader/libckblua.syms -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 
