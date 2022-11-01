@@ -340,15 +340,19 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
   for (int i = 0; i < header.e_shnum; i++) {
     const Elf64_Shdr *sh = &section_headers[i];
     if (sh->sh_type == SHT_RELA) {
+      printf("loading reloaction section %d\n", i);
       if (sh->sh_entsize != sizeof(Elf64_Rela)) {
+        printf("size mismatch sh->sh_entsize %zu sizeof(Elf64_Rela) %zu\n", sh->sh_entsize, sizeof(Elf64_Rela));
         return fuck();
       }
       size_t relocation_size = sh->sh_size / sh->sh_entsize;
       uint64_t current_offset = sh->sh_offset;
+      printf("sh_size %lu sh_entsize %lu relocation_size %zu current_offset %lu\n", sh->sh_size, sh->sh_entsize, relocation_size, current_offset);
       while (relocation_size > 0) {
         Elf64_Rela relocations[64];
         size_t load_size = MIN(relocation_size, 64);
         uint64_t load_length = load_size * sizeof(Elf64_Rela);
+        printf("loading cell load_size %zu load_length %lu\n", load_size, load_length);
         ret = ckb_load_cell_data((void *)relocations, &load_length,
                                  current_offset, index, CKB_SOURCE_CELL_DEP);
         if (ret != CKB_SUCCESS) {
@@ -359,15 +363,21 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
         }
         relocation_size -= load_size;
         current_offset += load_size * sizeof(Elf64_Rela);
+        printf("cell loaded relocation_size %zu current_offset %lu\n", relocation_size, current_offset);
         for (size_t j = 0; j < load_size; j++) {
           Elf64_Rela *r = &relocations[j];
           if (r->r_info != R_RISCV_RELATIVE) {
             /* Only relative relocation is supported now, we might add more
              * later */
+            printf("loading non relative entry at relocation_size %zu current_offset %lu load_size %zu j %zu\n", relocation_size, current_offset, load_size, j);
+            printf("R_RISCV_RELATIVE %lx\n", R_RISCV_RELATIVE);
+            printf("r->r_info %lx r->r_offset %lx r->r_addend %lx aligned_size %lx\n", r->r_info, r->r_offset, r->r_addend, aligned_size);
             return fuck();
           }
           if (r->r_offset >= (aligned_size - sizeof(uint64_t)) ||
               r->r_addend >= (int64_t)(aligned_size) || r->r_addend < 0) {
+            printf("dynamic entry malformed at relocation_size %zu current_offset %lu load_size %zu j %zu\n", relocation_size, current_offset, load_size, j);
+            printf("r->r_info %lx r->r_offset %lx r->r_addend %lx aligned_size %lx\n", r->r_info, r->r_offset, r->r_addend, aligned_size);
             return fuck();
           }
           uint64_t temp = (uint64_t)(aligned_addr + r->r_addend);
