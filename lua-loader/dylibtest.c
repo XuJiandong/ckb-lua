@@ -60,7 +60,7 @@ int load_validate_func(uint8_t* code_buff, uint32_t* code_buff_size,
         printf("dl_opening error: %d\n", err);
         return err;
     }
-    if (handle != NULL) {
+    if (handle == NULL) {
         printf("dl_opening error, can not load library\n");
         err = ERROR_CANT_LOAD_LIB;
         goto exit;
