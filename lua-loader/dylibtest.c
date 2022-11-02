@@ -17,14 +17,11 @@ int ckb_exit(signed char);
 #include "ckb_consts.h"
 
 #define MAX_CODE_SIZE (1024 * 1024)
-#define EXPORTED_FUNC_NAME "dylib_hello_world"
 #define SCRIPT_SIZE (32 * 1024)
 
 #define RESERVED_ARGS_SIZE 2
 #define BLAKE2B_BLOCK_SIZE 32
 #define HASH_TYPE_SIZE 1
-
-typedef int (*HelloWorldFuncType)();
 
 enum ErrorCode {
     // 0 is the only success code. We can use 0 directly.
@@ -124,17 +121,38 @@ void must_get_dylib_handle(void** handle) {
 void* must_load_function(void* handle, char* name) {
     void* func = ckb_dlsym(handle, name);
     if (func == NULL) {
-        printf("dl_opening error, can't find symbol\n");
+        printf("dl_opening error, can't find symbol %s\n", name);
         ckb_exit(ERROR_CANT_FIND_SYMBOL);
     }
+    printf("dl_open: function found %s\n", name);
     return func;
+}
+
+typedef int (*HelloWorldFuncType)();
+void run_test_code(void* handle) {
+    HelloWorldFuncType func = must_load_function(handle, "dylib_hello_world");
+    printf("running validate function\n");
+    int result = func();
+    printf("running function result %d\n", result);
+}
+
+typedef void* (*CreateLuaInstanceFuncType)(uintptr_t min, uintptr_t max);
+typedef void (*EvaluateLuaCodeFuncType)(void* l, const char* code,
+                                        size_t code_size, char* name);
+typedef void (*CloseLuaInstanceFuncType)(void* l);
+
+void run_lua_test_code(void* handle) {
+  CreateLuaInstanceFuncType create_func = must_load_function(handle, "create_lua_instance_with_memory_bounds");
+  (void)create_func;
+  EvaluateLuaCodeFuncType evaluate_func = must_load_function(handle, "evaluate_lua_code");
+  (void)evaluate_func;
+  CloseLuaInstanceFuncType close_func = must_load_function(handle, "close_lua_instance");
+  (void)close_func;
 }
 
 int main() {
     void* handle;
     must_get_dylib_handle(&handle);
-    HelloWorldFuncType func = must_load_function(handle, EXPORTED_FUNC_NAME);
-    printf("running validate function\n");
-    int result = func();
-    printf("running function result %d\n", result);
+    run_test_code(handle);
+    run_lua_test_code(handle);
 }
