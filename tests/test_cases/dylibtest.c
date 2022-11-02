@@ -133,40 +133,64 @@ typedef int (*EvaluateLuaCodeFuncType)(void* l, const char* code,
                                        size_t code_size, char* name);
 typedef void (*CloseLuaInstanceFuncType)(void* l);
 
-void run_lua_test_code(void* handle) {
+void run_lua_test_code(void* handle, int n) {
     CreateLuaInstanceFuncType create_func =
         must_load_function(handle, "create_lua_instance_with_memory_bounds");
-    (void)create_func;
     EvaluateLuaCodeFuncType evaluate_func =
         must_load_function(handle, "evaluate_lua_code");
-    (void)evaluate_func;
     CloseLuaInstanceFuncType close_func =
         must_load_function(handle, "close_lua_instance");
-    (void)close_func;
 
     const size_t mem_size = 1024 * 512;
     uint8_t mem[mem_size];
 
-    printf("creating lua instance\n");
-    void* l = create_func((uintptr_t)mem, (uintptr_t)(mem + mem_size));
-    if (l == NULL) {
-        printf("creating lua instance failed\n");
-        return;
-    }
-    const char* code = "print('hello world')";
-    size_t code_size = strlen(code);
-    printf("evaluating lua code\n");
-    int ret = evaluate_func(l, code, code_size, "test");
-    if (ret != 0) {
-        printf("evaluating lua code failed: %d\n", ret);
-        return;
-    }
-    printf("closing lua instance\n");
-    close_func(l);
+    size_t i = 0;
+    // At least run lua code once.
+    do {
+        printf("creating lua instance\n");
+        void* l = create_func((uintptr_t)mem, (uintptr_t)(mem + mem_size));
+        if (l == NULL) {
+            printf("creating lua instance failed\n");
+            return;
+        }
+        const char* code = "print('hello world')";
+        size_t code_size = strlen(code);
+        const size_t times = 10;
+        printf("evaluating lua code for %zu times\n", times);
+        size_t j = 0;
+        do {
+            int ret = evaluate_func(l, code, code_size, "test");
+            if (ret != 0) {
+                printf("evaluating lua code failed: %d\n", ret);
+                return;
+            }
+            j++;
+        } while (j < times);
+        printf("closing lua instance\n");
+        close_func(l);
+        i++;
+    } while (i < n);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     void* handle;
     must_get_dylib_handle(&handle);
-    run_lua_test_code(handle);
+
+    int n = 0;
+    size_t optind;
+    for (optind = 0; optind < argc && argv[optind][0] == '-'; optind++) {
+        switch (argv[optind][1]) {
+            case 'c': {
+                n = _atoi((const char**)&argv[optind + 1]);
+                optind = optind + 1;
+                break;
+            }
+            default:
+                printf("Usage: %s [-c number_of_times_to_run]\n");
+                ckb_exit(-1);
+        }
+    }
+    argv += optind;
+
+    run_lua_test_code(handle, n);
 }

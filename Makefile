@@ -47,7 +47,7 @@ build/libckblua.so: build/lua-loader.o lualib/liblua.a
 	$(OBJCOPY) --strip-debug --strip-all $@
 
 fmt:
-	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h
+	clang-format -style="{BasedOnStyle: google, IndentWidth: 4, SortIncludes: false}" -i lualib/*.c lualib/*.h lua-loader/*.h lua-loader/*.c include/*.c include/*.h tests/test_cases/*.c
 
 clean-local:
 	rm -f build/*.o
