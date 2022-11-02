@@ -135,11 +135,11 @@ typedef void (*CloseLuaInstanceFuncType)(void* l);
 
 void run_lua_test_code(void* handle, int n) {
     CreateLuaInstanceFuncType create_func =
-        must_load_function(handle, "create_lua_instance_with_memory_bounds");
+        must_load_function(handle, "lua_create_instance");
     EvaluateLuaCodeFuncType evaluate_func =
-        must_load_function(handle, "evaluate_lua_code");
+        must_load_function(handle, "lua_run_code");
     CloseLuaInstanceFuncType close_func =
-        must_load_function(handle, "close_lua_instance");
+        must_load_function(handle, "lua_close_instance");
 
     const size_t mem_size = 1024 * 512;
     uint8_t mem[mem_size];

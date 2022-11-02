@@ -450,7 +450,7 @@ int main(int argc, char **argv) {
 // memory on initializing lua stete instead of adding a separate function to
 // configure memory bounds after creation.
 __attribute__((visibility("default"))) void *
-create_lua_instance_with_memory_bounds(uintptr_t min, uintptr_t max) {
+lua_create_instance(uintptr_t min, uintptr_t max) {
     malloc_config(min, max);
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {
@@ -462,22 +462,21 @@ create_lua_instance_with_memory_bounds(uintptr_t min, uintptr_t max) {
     return (void *)L;
 }
 
-__attribute__((visibility("default"))) int evaluate_lua_code(void *l,
+__attribute__((visibility("default"))) int lua_run_code(void *l,
                                                              const char *code,
                                                              size_t code_size,
                                                              char *name) {
     lua_State *L = l;
     if (L == NULL) {
-        l_message(name, "invalid lua state\n");
-        return -1;
+        ckb_exit(CKB_LUA_INVALID_STATE);
     }
     int status = dochunk(L, luaL_loadbuffer(L, code, code_size, name));
     return status;
 }
 
-__attribute__((visibility("default"))) void close_lua_instance(void *L) {
+__attribute__((visibility("default"))) void lua_close_instance(void *L) {
     if (L == NULL) {
-        return;
+        ckb_exit(CKB_LUA_INVALID_STATE);
     }
     lua_close((lua_State *)L);
 }
