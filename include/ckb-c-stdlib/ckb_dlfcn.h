@@ -99,13 +99,10 @@ typedef struct {
 #endif
 
 #define ERROR_CONTEXT_FAILURE -21
+#define ERROR_INVALID_ELF -22
 #define ERROR_MEMORY_NOT_ENOUGH -23
 #define ERROR_OUT_OF_BOUND -24
 #define ERROR_INVALID_ARGS -25
-
-int __attribute__ ((noinline)) fuck() {
-  return -42;
-}
 
 typedef struct {
   Elf64_Sym *dynsyms;
@@ -208,12 +205,12 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
     return ret;
   }
   if (len < sizeof(header)) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   if ((header.e_phentsize != sizeof(Elf64_Phdr)) ||
       (header.e_shentsize != sizeof(Elf64_Shdr)) || (header.e_phnum > 16) ||
       (header.e_shnum > 32)) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   /* Parse program headers and load relevant parts */
   Elf64_Phdr program_headers[16];
@@ -224,7 +221,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
     return ret;
   }
   if (len < sizeof(Elf64_Phdr) * header.e_phnum) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   uint64_t max_consumed_size = 0;
   for (int i = 0; i < header.e_phnum; i++) {
@@ -235,18 +232,18 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
         uint64_t vaddr = ph->p_vaddr - prepad;
         uint64_t memsz = 0;
         if (roundup(prepad + ph->p_memsz, RISCV_PGSIZE, &memsz)) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         unsigned long size = 0;
         if (__builtin_uaddl_overflow(vaddr, memsz, &size)) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         if (size > aligned_size) {
           return ERROR_MEMORY_NOT_ENOUGH;
         }
         uint8_t *addr2 = addr_offset_checked(aligned_addr, aligned_size, vaddr);
         if (addr2 == 0) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         ret = _ckb_load_cell_code(addr2, memsz, ph->p_offset, ph->p_filesz,
                                   index, CKB_SOURCE_CELL_DEP);
@@ -260,16 +257,16 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
         uint64_t size = 0;
         uint64_t gap_len = 0;
         if (filesz > memsz) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         gap_len = memsz - filesz;
 
         if (__builtin_uaddl_overflow(ph->p_vaddr, memsz, &size)) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         uint64_t consumed_end = 0;
         if (roundup(size, RISCV_PGSIZE, &consumed_end)) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         if (consumed_end > aligned_size) {
           return ERROR_MEMORY_NOT_ENOUGH;
@@ -277,7 +274,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
         uint8_t *addr2 =
             addr_offset_checked(aligned_addr, aligned_size, ph->p_vaddr);
         if (addr2 == 0) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         uint64_t read_len = filesz;
         ret = ckb_load_cell_data(addr2, &read_len, ph->p_offset, index,
@@ -286,7 +283,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
           return ret;
         }
         if (read_len < filesz) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         if (gap_len > 0) {
           uint8_t *addr3 = addr_offset_with_context(addr2, filesz, context);
@@ -295,7 +292,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
           if (addr3 != 0 && addr4 != 0) {
             memset(addr3, 0, gap_len);
           } else {
-            return fuck();
+            return ERROR_INVALID_ELF;
           }
         }
         max_consumed_size = MAX(max_consumed_size, consumed_end);
@@ -314,10 +311,10 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
     return ret;
   }
   if (len < sizeof(Elf64_Shdr) * header.e_shnum) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   if (header.e_shstrndx >= 32 || header.e_shstrndx >= header.e_shnum) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   /*
    * First load shstrtab tab, this is temporary code only needed in ELF loading
@@ -326,7 +323,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
   Elf64_Shdr *shshrtab = &section_headers[header.e_shstrndx];
   char shrtab[4096];
   if (shshrtab->sh_size > 4096) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   uint64_t shrtab_len = shshrtab->sh_size;
   ret = ckb_load_cell_data((void *)shrtab, &shrtab_len, shshrtab->sh_offset,
@@ -335,13 +332,13 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
     return ret;
   }
   if (shrtab_len < shshrtab->sh_size) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   for (int i = 0; i < header.e_shnum; i++) {
     const Elf64_Shdr *sh = &section_headers[i];
     if (sh->sh_type == SHT_RELA) {
       if (sh->sh_entsize != sizeof(Elf64_Rela)) {
-        return fuck();
+        return ERROR_INVALID_ELF;
       }
       size_t relocation_size = sh->sh_size / sh->sh_entsize;
       uint64_t current_offset = sh->sh_offset;
@@ -355,7 +352,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
           return ret;
         }
         if (load_length < load_size * sizeof(Elf64_Rela)) {
-          return fuck();
+          return ERROR_INVALID_ELF;
         }
         relocation_size -= load_size;
         current_offset += load_size * sizeof(Elf64_Rela);
@@ -364,11 +361,11 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
           if (r->r_info != R_RISCV_RELATIVE) {
             /* Only relative relocation is supported now, we might add more
              * later */
-            return fuck();
+            return ERROR_INVALID_ELF;
           }
           if (r->r_offset >= (aligned_size - sizeof(uint64_t)) ||
               r->r_addend >= (int64_t)(aligned_size) || r->r_addend < 0) {
-            return fuck();
+            return ERROR_INVALID_ELF;
           }
           uint64_t temp = (uint64_t)(aligned_addr + r->r_addend);
           memcpy(aligned_addr + r->r_offset, &temp, sizeof(uint64_t));
@@ -377,19 +374,19 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
     } else if (sh->sh_type == SHT_DYNSYM) {
       /* We assume one ELF file only has one DYNSYM section now */
       if (sh->sh_entsize != sizeof(Elf64_Sym)) {
-        return fuck();
+        return ERROR_INVALID_ELF;
       }
       uint8_t *addr2 =
           addr_offset_checked(aligned_addr, aligned_size, sh->sh_offset);
       if (addr2 == 0) {
-        return fuck();
+        return ERROR_INVALID_ELF;
       }
       context->dynsyms = (Elf64_Sym *)addr2;
       context->dynsym_size = sh->sh_size / sh->sh_entsize;
 
       uint8_t *addr3 = addr_offset_with_context(addr2, sh->sh_size, context);
       if (addr3 == 0) {
-        return fuck();
+        return ERROR_INVALID_ELF;
       }
     } else if (sh->sh_type == SHT_STRTAB) {
       static char DYNSTR[] = ".dynstr";
@@ -401,7 +398,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
           const uint8_t *addr2 =
               addr_offset_checked(aligned_addr, aligned_size, sh->sh_offset);
           if (addr2 == 0) {
-            return fuck();
+            return ERROR_INVALID_ELF;
           }
           context->dynstr = (const char *)addr2;
         }
@@ -409,7 +406,7 @@ int ckb_dlopen2(const uint8_t *dep_cell_hash, uint8_t hash_type,
     }
   }
   if (context->dynsyms == NULL || context->dynstr == NULL) {
-    return fuck();
+    return ERROR_INVALID_ELF;
   }
   *handle = (void *)context;
   *consumed_size = max_consumed_size + RISCV_PGSIZE;
