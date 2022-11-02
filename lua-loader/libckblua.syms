@@ -1,5 +1,4 @@
 {
-  dylib_hello_world;
   create_lua_instance_with_memory_bounds;
   evaluate_lua_code;
   close_lua_instance;
