@@ -46,13 +46,16 @@ partial_loading.json:
 partial_loading: partial_loading.json
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file $^ --script-group-type=type --script-hash=0xca505bee92c34ac4522d15da2c91f0e4060e4540f90a28d7202df8fe8ce930ba --read-file test_partial_loading.lua --bin ../../build/lua-loader.debug -- -r  2>&1 | fgrep 'Run result: 0'
 
+dylibtest:
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- -f 2>&1 | fgrep 'hello world'
+
 all:
 	$(call run, test_require.lua)
 	$(call run, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)
 	$(call run, bn.lua)
 
-ci: evaluate-lua-code-in-cell-data save-and-load-file-system-data partial_loading memory_leak
+ci: evaluate-lua-code-in-cell-data save-and-load-file-system-data partial_loading memory_leak dylibtest
 	$(call run_ci, test_require.lua)
 	$(call run_ci, test_loadfile.lua)
 	$(call run_with_mocked_tx, test_ckbsyscalls.lua)

@@ -26,7 +26,7 @@ docker-interactive:
 lualib/liblua.a:
 	make -C lualib liblua.a
 
-build/dylibtest: lua-loader/dylibtest.c
+build/dylibtest: tests/test_cases/dylibtest.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 
 build/lua-loader.o: lua-loader/lua-loader.c
