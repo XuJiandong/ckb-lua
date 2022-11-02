@@ -137,17 +137,40 @@ void run_test_code(void* handle) {
 }
 
 typedef void* (*CreateLuaInstanceFuncType)(uintptr_t min, uintptr_t max);
-typedef void (*EvaluateLuaCodeFuncType)(void* l, const char* code,
-                                        size_t code_size, char* name);
+typedef int (*EvaluateLuaCodeFuncType)(void* l, const char* code,
+                                       size_t code_size, char* name);
 typedef void (*CloseLuaInstanceFuncType)(void* l);
 
 void run_lua_test_code(void* handle) {
-  CreateLuaInstanceFuncType create_func = must_load_function(handle, "create_lua_instance_with_memory_bounds");
-  (void)create_func;
-  EvaluateLuaCodeFuncType evaluate_func = must_load_function(handle, "evaluate_lua_code");
-  (void)evaluate_func;
-  CloseLuaInstanceFuncType close_func = must_load_function(handle, "close_lua_instance");
-  (void)close_func;
+    CreateLuaInstanceFuncType create_func =
+        must_load_function(handle, "create_lua_instance_with_memory_bounds");
+    (void)create_func;
+    EvaluateLuaCodeFuncType evaluate_func =
+        must_load_function(handle, "evaluate_lua_code");
+    (void)evaluate_func;
+    CloseLuaInstanceFuncType close_func =
+        must_load_function(handle, "close_lua_instance");
+    (void)close_func;
+
+    const size_t mem_size = 1024 * 512;
+    uint8_t mem[mem_size];
+
+    printf("creating lua instance\n");
+    void* l = create_func((uintptr_t)mem, (uintptr_t)(mem + mem_size));
+    if (l == NULL) {
+        printf("creating lua instance failed\n");
+        return;
+    }
+    const char* code = "print('hello world')";
+    size_t code_size = strlen(code);
+    printf("evaluating lua code\n");
+    int ret = evaluate_func(l, code, code_size, "test");
+    if (ret != 0) {
+        printf("evaluating lua code failed: %d\n", ret);
+        return;
+    }
+    printf("closing lua instance\n");
+    close_func(l);
 }
 
 int main() {

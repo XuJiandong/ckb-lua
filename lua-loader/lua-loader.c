@@ -489,7 +489,7 @@ __attribute__((visibility("default"))) int evaluate_lua_code(void *l,
         return -1;
     }
     status = luaL_loadbuffer(L, code, code_size, name);
-    if (L != LUA_OK) {
+    if (status != LUA_OK) {
         l_message(name, "loading code failed\n");
         return -1;
     }
