@@ -128,14 +128,6 @@ void* must_load_function(void* handle, char* name) {
     return func;
 }
 
-typedef int (*HelloWorldFuncType)();
-void run_test_code(void* handle) {
-    HelloWorldFuncType func = must_load_function(handle, "dylib_hello_world");
-    printf("running validate function\n");
-    int result = func();
-    printf("running function result %d\n", result);
-}
-
 typedef void* (*CreateLuaInstanceFuncType)(uintptr_t min, uintptr_t max);
 typedef int (*EvaluateLuaCodeFuncType)(void* l, const char* code,
                                        size_t code_size, char* name);
@@ -176,6 +168,5 @@ void run_lua_test_code(void* handle) {
 int main() {
     void* handle;
     must_get_dylib_handle(&handle);
-    run_test_code(handle);
     run_lua_test_code(handle);
 }

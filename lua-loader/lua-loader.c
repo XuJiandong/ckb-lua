@@ -443,11 +443,6 @@ int main(int argc, char **argv) {
     return (result && status == LUA_OK) ? 0 : -1;
 }
 
-__attribute__((visibility("default"))) int dylib_hello_world() {
-    printf("hello world\n");
-    return 42;
-}
-
 // Running malloc inside the embedded lua instance may interfere with the
 // hosting program malloc operations. To avoid such problem, the hosting program
 // should pre-alloc enough memory for exxclusive usage of the lua program. Also
