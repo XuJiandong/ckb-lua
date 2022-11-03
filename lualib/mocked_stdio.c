@@ -13,6 +13,10 @@ int ckb_exit(signed char code);
 static int s_local_access_enabled = 0;
 void enable_local_access(int b) { s_local_access_enabled = b; }
 
+static int s_fs_access_enabled = 0;
+void enable_fs_access(int b) { s_fs_access_enabled = b; }
+int fs_access_enabled() { return s_fs_access_enabled; }
+
 #define memory_barrier() asm volatile("fence" ::: "memory")
 
 static inline long __internal_syscall(long n, long _a0, long _a1, long _a2,
