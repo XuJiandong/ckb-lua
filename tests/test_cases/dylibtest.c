@@ -42,6 +42,8 @@ enum ErrorCode {
     ERROR_INVALID_ARGS_FORMAT,
 };
 
+static uint8_t code_buff[MAX_CODE_SIZE] __attribute__((aligned(RISCV_PGSIZE)));
+
 int get_dylib_handle(void** handle) {
     unsigned char script[SCRIPT_SIZE];
     uint64_t len = SCRIPT_SIZE;
@@ -82,11 +84,6 @@ int get_dylib_handle(void** handle) {
     uint8_t hash_type =
         *(args_bytes_seg.ptr + RESERVED_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
 
-    // don't move code_buff into global variable. It doesn't work.
-    // it's a ckb-vm bug: the global variable will be freezed:
-    // https://github.com/nervosnetwork/ckb-vm/blob/d43f58d6bf8cc6210721fdcdb6e5ecba513ade0c/src/machine/elf_adaptor.rs#L28-L32
-    // The code can't be loaded into freezed memory.
-    uint8_t code_buff[MAX_CODE_SIZE] __attribute__((aligned(RISCV_PGSIZE)));
     size_t code_buff_size = MAX_CODE_SIZE;
     size_t consumed_size = 0;
 
