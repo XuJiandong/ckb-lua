@@ -42,7 +42,7 @@ enum ErrorCode {
     ERROR_INVALID_ARGS_FORMAT,
 };
 
-static uint8_t code_buff[MAX_CODE_SIZE] __attribute__((aligned(RISCV_PGSIZE)));
+uint8_t code_buff[MAX_CODE_SIZE] __attribute__((aligned(RISCV_PGSIZE)));
 
 int get_dylib_handle(void** handle) {
     unsigned char script[SCRIPT_SIZE];
@@ -88,6 +88,7 @@ int get_dylib_handle(void** handle) {
     size_t consumed_size = 0;
 
     printf("opening dynamic library\n");
+    printf("code_buff %p\n", code_buff);
     err = ckb_dlopen2(code_hash, hash_type, code_buff, code_buff_size, handle,
                       &consumed_size);
     if (err != 0) {
