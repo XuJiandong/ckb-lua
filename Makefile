@@ -42,7 +42,7 @@ build/lua-loader: build/lua-loader.o lualib/liblua.a
 	$(OBJCOPY) --strip-debug --strip-all $@
 
 build/libckblua.so: build/lua-loader.o lualib/liblua.a
-	$(LD) $(LDFLAGS) -D__SHARED_LIBRARY__ -fPIC -fPIE -pie -Wl,--dynamic-list lua-loader/libckblua.syms -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
+	$(LD) $(LDFLAGS) -Wl,--dynamic-list lua-loader/libckblua.syms -fpic -shared -o $@ $^ $(shell $(CC) --print-search-dirs | sed -n '/install:/p' | sed 's/install:\s*//g')libgcc.a
 	cp $@ $@.debug
 	$(OBJCOPY) --strip-debug --strip-all $@
 
