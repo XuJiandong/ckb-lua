@@ -449,8 +449,8 @@ int main(int argc, char **argv) {
 // note that, creating new lua state requries malloc, thus we configure the
 // memory on initializing lua stete instead of adding a separate function to
 // configure memory bounds after creation.
-__attribute__((visibility("default"))) void *
-lua_create_instance(uintptr_t min, uintptr_t max) {
+__attribute__((visibility("default"))) void *lua_create_instance(
+    uintptr_t min, uintptr_t max) {
     malloc_config(min, max);
     lua_State *L = luaL_newstate(); /* create state */
     if (L == NULL) {
@@ -463,9 +463,9 @@ lua_create_instance(uintptr_t min, uintptr_t max) {
 }
 
 __attribute__((visibility("default"))) int lua_run_code(void *l,
-                                                             const char *code,
-                                                             size_t code_size,
-                                                             char *name) {
+                                                        const char *code,
+                                                        size_t code_size,
+                                                        char *name) {
     lua_State *L = l;
     if (L == NULL) {
         ckb_exit(CKB_LUA_INVALID_STATE);
