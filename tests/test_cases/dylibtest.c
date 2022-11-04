@@ -1,38 +1,22 @@
 #define CKB_C_STDLIB_PRINTF
 #include <stdio.h>
 
-// it's used by blockchain-api2.h, the behavior when panic
-#ifndef MOL2_EXIT
-#define MOL2_EXIT ckb_exit
-#endif
-int ckb_exit(signed char);
-
-#include <stdbool.h>
-#include <string.h>
-
 #include "blake2b.h"
 #include "blockchain.h"
 #include "ckb_syscalls.h"
 #include "ckb_dlfcn.h"
-#include "ckb_consts.h"
 
 #define MAX_CODE_SIZE (1024 * 1024)
-#define SCRIPT_SIZE (32 * 1024)
+#define MAX_SCRIPT_SIZE (32 * 1024)
 
 #define RESERVED_ARGS_SIZE 2
 #define BLAKE2B_BLOCK_SIZE 32
 #define HASH_TYPE_SIZE 1
 
 enum ErrorCode {
-    // 0 is the only success code. We can use 0 directly.
-
     // inherit from simple_udt
-    ERROR_ARGUMENTS_LEN = -1,
     ERROR_ENCODING = -2,
-    ERROR_SYSCALL = -3,
     ERROR_SCRIPT_TOO_LONG = -21,
-    ERROR_OVERFLOWING = -51,
-    ERROR_AMOUNT = -52,
 
     // error code is starting from 40, to avoid conflict with
     // common error code in other scripts.
@@ -45,39 +29,35 @@ enum ErrorCode {
 uint8_t code_buff[MAX_CODE_SIZE] __attribute__((aligned(RISCV_PGSIZE)));
 
 int get_dylib_handle(void** handle) {
-    unsigned char script[SCRIPT_SIZE];
-    uint64_t len = SCRIPT_SIZE;
-    printf("loading script\n");
+    unsigned char script[MAX_SCRIPT_SIZE];
+    uint64_t len = MAX_SCRIPT_SIZE;
     int err = ckb_load_script(script, &len, 0);
     if (err != 0) {
         printf("loading script error %d\n", err);
-        goto exit;
+        return err;
     }
-    if (len > SCRIPT_SIZE) {
-        err = ERROR_SCRIPT_TOO_LONG;
-        goto exit;
+    if (len > MAX_SCRIPT_SIZE) {
+        return ERROR_SCRIPT_TOO_LONG;
     }
 
     mol_seg_t script_seg;
     script_seg.ptr = (uint8_t*)script;
     script_seg.size = len;
 
-    printf("verifiying script\n");
     if (MolReader_Script_verify(&script_seg, false) != MOL_OK) {
-        err = ERROR_ENCODING;
-        goto exit;
+        printf("verifying script failed\n");
+        return ERROR_ENCODING;
     }
 
     // The script arguments are in the following format
-    // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
-    // <hash type of lua code, 1 byte> <lua script args, variable length>
+    // <reserved args, 2 bytes> <code hash of the share library, 32 bytes>
+    // <hash type of shared library, 1 byte>
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
 
     if (args_bytes_seg.size <
         RESERVED_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + HASH_TYPE_SIZE) {
-        err = ERROR_INVALID_ARGS_FORMAT;
-        goto exit;
+        return ERROR_INVALID_ARGS_FORMAT;
     }
 
     uint8_t* code_hash = args_bytes_seg.ptr + RESERVED_ARGS_SIZE;
@@ -87,8 +67,6 @@ int get_dylib_handle(void** handle) {
     size_t code_buff_size = MAX_CODE_SIZE;
     size_t consumed_size = 0;
 
-    printf("opening dynamic library\n");
-    printf("code_buff %p\n", code_buff);
     err = ckb_dlopen2(code_hash, hash_type, code_buff, code_buff_size, handle,
                       &consumed_size);
     if (err != 0) {
@@ -97,16 +75,13 @@ int get_dylib_handle(void** handle) {
     }
     if (handle == NULL) {
         printf("dl_opening error, can not load library\n");
-        err = ERROR_CANT_LOAD_LIB;
-        goto exit;
+        return ERROR_CANT_LOAD_LIB;
     }
     if (consumed_size % RISCV_PGSIZE != 0) {
         printf("dl_opening error, library malformed\n");
-        err = ERROR_LIB_MALFORMED;
-        goto exit;
+        return ERROR_LIB_MALFORMED;
     }
-exit:
-    return err;
+    return 0;
 }
 
 void must_get_dylib_handle(void** handle) {
@@ -122,7 +97,6 @@ void* must_load_function(void* handle, char* name) {
         printf("dl_opening error, can't find symbol %s\n", name);
         ckb_exit(ERROR_CANT_FIND_SYMBOL);
     }
-    printf("dl_open: function found %s\n", name);
     return func;
 }
 
@@ -145,7 +119,6 @@ void run_lua_test_code(void* handle, int n) {
     size_t i = 0;
     // At least run lua code once.
     do {
-        printf("creating lua instance\n");
         void* l = create_func((uintptr_t)mem, (uintptr_t)(mem + mem_size));
         if (l == NULL) {
             printf("creating lua instance failed\n");
@@ -164,7 +137,6 @@ void run_lua_test_code(void* handle, int n) {
             }
             j++;
         } while (j < times);
-        printf("closing lua instance\n");
         close_func(l);
         i++;
     } while (i < n);
@@ -184,7 +156,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             default:
-                printf("Usage: %s [-c number_of_times_to_run]\n");
+                printf("Usage: [-c number_of_times_to_run]\n");
                 ckb_exit(-1);
         }
     }
