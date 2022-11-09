@@ -2,7 +2,7 @@
 
 To facilitate the development of contracts on ckb platform, we recently ported Lua, a scripting language famous for its simplicity and ease of use, to the ckb-vm. Ckb developers can now both run the standalone Lua interpreter in the ckb platform and embed Lua code into their main ckb contracts. This greatly lower the barrier to entry for ckb contracts development.
 
-[dylib.c](../examples/dylib.c) a sample program that evaluates lua code with ckb-lua shared library. We showcase how to load and unpack script args by a few lines of Lua code, i.e.
+[dylib.c](https://github.com/XuJiandong/ckb-lua/blob/70bc3e7bff3521a600612e52b9a2aee56c3efca2/examples/dylib.c) a sample program that evaluates lua code with ckb-lua shared library. We showcase how to load and unpack script args by a few lines of Lua code, i.e.
 
 ```lua
 local _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
@@ -18,13 +18,13 @@ I will now explain what this sample code does and how to run it.
 
 # Building Shared Library
 
-The sample code depends on `libckblua.so` shared library to run Lua code. We need to obtain the source of ckb-lua from [the github repository](https://github.com/XuJiandong/ckb-lua), and build it ourselves. `make all-via-docker` is enough to build all the binaries. `./build/libckblua.so` may be used afterward.
+The sample code depends on `libckblua.so` shared library to run Lua code. We need to obtain the source of ckb-lua from [the github repository](https://github.com/XuJiandong/ckb-lua), and build it ourselves. `make all-via-docker` is enough to build all the binaries. `./build/libckblua.so` may be used afterward. The sample program `./build/dylibexample` built from [dylib.c](https://github.com/XuJiandong/ckb-lua/blob/70bc3e7bff3521a600612e52b9a2aee56c3efca2/examples/dylib.c) is also available to use.
 
 # Preparing Shared Library
 
 ## Packing the Shared Library Into the Dependent Cell Data
 
-To use the ckb-lua shared library, we need to store the shared library in some cell data and specify the cell with shared library data as a dependent cell. We have assembled a [mock transaction file](https://crates.io/crates/ckb-mock-tx-types) [here](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/dylib.json). You can also mock this with the ckb rust SDK (like [this](https://github.com/nervosnetwork/ckb-production-scripts/blob/master/tests/xudt_rce_rust/tests/test_xudt_rce.rs)). You can use it along with [ckb-standalone-debugger](https://github.com/nervosnetwork/ckb-standalone-debugger) to run the sample code. TODO: add a makefile target for this sample code, and add github link on how to build and run this sample code.
+To use the ckb-lua shared library, we need to store the shared library in some cell data and specify the cell with shared library data as a dependent cell. We have assembled a [mock transaction file](https://crates.io/crates/ckb-mock-tx-types) [here](https://github.com/XuJiandong/ckb-lua/blob/4e5375eb2a866595f89826db5510bc9d1f8e9510/tests/test_cases/dylib.json). You can also mock this with the ckb rust SDK (like [this](https://github.com/nervosnetwork/ckb-production-scripts/blob/master/tests/xudt_rce_rust/tests/test_xudt_rce.rs)). You can use it along with [ckb-standalone-debugger](https://github.com/nervosnetwork/ckb-standalone-debugger) to run the sample code. For example, you can run `./build/dylibexample` with `ckb-debugger --tx-file ./tests/test_cases/dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin build/dylibexample`.
 
 ## Passing the Dependent Cell Information with Script Args
 
