@@ -104,7 +104,7 @@ load = function(self, raw)
 end
 
 function get_owner_lock_hash() 
-  _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
+  local _code_hash, _hash_type, args, err = ckb.load_and_unpack_script()
   if err ~= nil then
     return ERROR_LOAD_SCRIPT
   end
