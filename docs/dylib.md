@@ -71,7 +71,7 @@ To create new Lua instance, we may use `lua_create_instance`. In order to avoid 
 
 ### `lua_run_code`
 
-The actual evaluation of Lua code can be initiated by calling`lua_run_code`. Both Lua source code and binary code are acceptable to `lua_run_code`. Evaluating binary code can be less resource-hungry both in terms of the cycles needed to run the code and the storage space required to store the code. It takes four arguments. The first one `l` is the opaque pointer returned from `lua_create_instance`, the second one `code` is a pointer which points to the code buffer, which can be either Lua source code or Lua bytecode. The third one `code_size` is the size of the `code` buffer. The last one `name` is the name of the Lua program. This may be helpful in debugging.
+The actual evaluation of Lua code can be initiated by calling `lua_run_code`. Both Lua source code and binary code are acceptable to `lua_run_code`. Evaluating binary code can be less resource-hungry both in terms of the cycles needed to run the code and the storage space required to store the code. It takes four arguments. The first one `l` is the opaque pointer returned from `lua_create_instance`, the second one `code` is a pointer which points to the code buffer, which can be either Lua source code or Lua bytecode. The third one `code_size` is the size of the `code` buffer. The last one `name` is the name of the Lua program. This may be helpful in debugging. The lua script may early return control to the host program by calling `ckb.yield(code)`. In this case, the return code of this function is the parameter `code`. If no `ckb.yield` is called, 0 will be returned if lua script is executed successfully, otherwise a negative number will be returned. Lua script should pass non-negative number to `ckb.yield` in order to distinguish lua interpreter error and delibrately set return code.
 
 ### `lua_close_instance`
 
@@ -145,7 +145,7 @@ The prototype of ckb-lua is now somewhat complete. We are now gathering feedback
 
 ### Partial Loading
 
-The functions here may take a variable length of arguments. There is a [partial loading like mechanism](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#partial-loading) for Lua functions. Functions below with partial loading supported may be additionally passed to the argument length and offset. The behavior of these Lua functions depends is classified as follows
+The functions here may take a variable length of arguments. There is a [partial loading like mechanism](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#partial-loading) for Lua functions. Functions below with partial loading supported may be additionally passed to the argument length and offset. The behavior of these Lua functions is classified as follows
 
 - Both length and offset are omitted.
 In this case, the whole data would be loaded, e.g. calling `ckb.load_witness(0, ckb.SOURCE_INPUT)` would load the whole witness of input cell of index 0.
@@ -160,7 +160,7 @@ In this case, the data starting from offset of length would be returned, e.g. ca
 
 ### Error Handling
 
-Most of them may return an error as the last argument. The error is a non-zero integer that represents the kind of error that happened during the execution of the function. Callers should check errors to be nil before using other arguments.
+Most of they may return an error as the last argument. The error is a non-zero integer that represents the kind of error that happened during the execution of the function. Callers should check errors to be nil before using other arguments.
 
 ### More Examples
 
