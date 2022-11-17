@@ -207,16 +207,11 @@ int load_lua_code(lua_State *L, char *buf, size_t buflen) {
     return dochunk(L, luaL_loadfile(L, FILENAME));
 }
 
-int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
-                            const uint8_t *code_hash, uint8_t hash_type) {
-    size_t index = 0;
-    int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
-    if (ret) {
-        return ret;
-    }
+int load_lua_code_from_source(lua_State *L, uint16_t lua_loader_args,
+                              size_t source, size_t index) {
     char *buf = NULL;
     size_t buflen = 0;
-    ret = ckb_load_cell_data(NULL, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
+    int ret = ckb_load_cell_data(NULL, &buflen, 0, index, source);
     if (ret) {
         return ret;
     }
@@ -224,11 +219,22 @@ int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
     if (buf == NULL) {
         return LUA_ERROR_OUT_OF_MEMORY;
     }
-    ret = ckb_load_cell_data(buf, &buflen, 0, index, CKB_SOURCE_CELL_DEP);
+    ret = ckb_load_cell_data(buf, &buflen, 0, index, source);
     if (ret) {
         return ret;
     }
     return load_lua_code(L, buf, buflen);
+}
+
+int load_lua_code_with_hash(lua_State *L, uint16_t lua_loader_args,
+                            const uint8_t *code_hash, uint8_t hash_type) {
+    size_t index = 0;
+    int ret = ckb_look_for_dep_with_hash2(code_hash, hash_type, &index);
+    if (ret) {
+        return ret;
+    }
+    return load_lua_code_from_source(L, lua_loader_args, CKB_SOURCE_CELL_DEP,
+                                     index);
 }
 
 #define SCRIPT_SIZE 32768
