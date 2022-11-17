@@ -257,19 +257,40 @@ int load_lua_code_from_cell_data(lua_State *L) {
     }
 
     // The script arguments are in the following format
-    // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
-    // <hash type of lua code, 1 byte> <lua script args, variable length>
-    // TOOD: parse lua script args
+    // <lua loader args, 2 bytes> <data, variable length>
     mol_seg_t args_seg = MolReader_Script_get_args(&script_seg);
     mol_seg_t args_bytes_seg = MolReader_Bytes_raw_bytes(&args_seg);
-    if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
+    if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE) {
         return LUA_ERROR_INVALID_ARGUMENT;
     }
     uint16_t lua_loader_args = *(args_bytes_seg.ptr);
-    uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;
-    uint8_t hash_type =
-        *(args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
-    return load_lua_code_with_hash(L, lua_loader_args, code_hash, hash_type);
+
+    if (lua_loader_args & 1) {
+        // Loading lua code from source and index
+        // The script arguments are in the following format
+        // <lua loader args, 2 bytes> <source, 8 bytes> <index, 8 bytes>
+        if (args_bytes_seg.size < LUA_LOADER_ARGS_SIZE + 2 * sizeof(uint64_t)) {
+            return -LUA_ERROR_INVALID_ARGUMENT;
+        }
+        uint64_t *ptr = (uint64_t *)(args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE);
+        uint64_t source = ptr[0];
+        uint64_t index = ptr[1];
+        return load_lua_code_from_source(L, lua_loader_args, source, index);
+    } else {
+        // Loading lua code from dependent cell with code hash and hash type
+        // The script arguments are in the following format
+        // <lua loader args, 2 bytes> <code hash of lua code, 32 bytes>
+        // <hash type of lua code, 1 byte>
+        if (args_bytes_seg.size <
+            LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE + 1) {
+            return -LUA_ERROR_INVALID_ARGUMENT;
+        }
+        uint8_t *code_hash = args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE;
+        uint8_t hash_type =
+            *(args_bytes_seg.ptr + LUA_LOADER_ARGS_SIZE + BLAKE2B_BLOCK_SIZE);
+        return load_lua_code_with_hash(L, lua_loader_args, code_hash,
+                                       hash_type);
+    }
 }
 
 /*
