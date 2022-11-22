@@ -195,6 +195,17 @@ side effects: exit the ckb-vm execution
 
 see also: [`ckb_exit` syscall](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#exit)
 
+#### `ckb.yield`
+description: stop lua execution, return to the ckb-vm caller
+
+calling example: `ckb.yield(code)`
+
+arguments: code (return code)
+
+return values: none
+
+side effects: stop lua execution, return to the ckb-vm caller
+
 #### `ckb.load_tx_hash`
 description: load the transaction hash
 
