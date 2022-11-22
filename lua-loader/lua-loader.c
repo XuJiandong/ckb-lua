@@ -24,8 +24,6 @@
 #define LUA_LOADER_ARGS_SIZE 2
 #define BLAKE2B_BLOCK_SIZE 32
 
-const char *CKB_RETURN_CODE_KEY = "_ckb_return_code";
-
 int exit(int c) {
     ckb_exit(c);
     return 0;
@@ -445,11 +443,7 @@ static int pmain(lua_State *L) {
     }
     ret = load_lua_code_from_cell_data(L);
 exit:
-    // Error happened, push no arguments to the stack.
-    if (ret) {
-        return 0;
-    }
-    lua_pushboolean(L, 1); /* signal no errors */
+    lua_pushinteger(L, ret);
     return 1;
 }
 
@@ -463,11 +457,18 @@ int main(int argc, char **argv) {
     lua_pushcfunction(L, &pmain);   /* to call 'pmain' in protected mode */
     lua_pushinteger(L, argc);       /* 1st argument */
     lua_pushlightuserdata(L, argv); /* 2nd argument */
-    status = lua_pcall(L, 2, 1, 0); /* do the call */
-    result = lua_toboolean(L, -1);  /* get result */
-    status = check_status_and_top_of_stack(L, status);
+    // Lua interpreter pcall result that represents the error while calling the
+    // function pmain. This may be non-zero if, for example, the syntax of the
+    // lua script is wrong.
+    status = lua_pcall(L, 2, 1, 0);
+    // Lua script execution result (an optional return code set by the script)
+    result = lua_tointeger(L, -1);
     lua_close(L);
-    return (result && status == LUA_OK) ? 0 : -1;
+    // Use negative number to represent lua interpreter error.
+    if (status != LUA_OK) {
+        return -status;
+    }
+    return result;
 }
 
 // Running malloc inside the embedded lua instance may interfere with the
