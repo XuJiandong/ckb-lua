@@ -142,6 +142,36 @@ void run_lua_test_code(void* handle, int n) {
     } while (i < n);
 }
 
+void test_invalid_lua_code(void* handle) {
+    CreateLuaInstanceFuncType create_func =
+        must_load_function(handle, "lua_create_instance");
+    EvaluateLuaCodeFuncType evaluate_func =
+        must_load_function(handle, "lua_run_code");
+    CloseLuaInstanceFuncType close_func =
+        must_load_function(handle, "lua_close_instance");
+
+    const size_t mem_size = 1024 * 512;
+    uint8_t mem[mem_size];
+
+    void* l = create_func((uintptr_t)mem, (uintptr_t)(mem + mem_size));
+    if (l == NULL) {
+        printf("creating lua instance failed\n");
+        ckb_exit(-1);
+    }
+    const char* code = "invalid lua code here";
+    size_t code_size = strlen(code);
+    int ret = evaluate_func(l, code, code_size, "test");
+    if (ret >= 0) {
+        close_func(l);
+        printf(
+            "evaluating lua code failed: returned %d, expecting negative "
+            "number\n",
+            ret);
+        ckb_exit(-1);
+    }
+    close_func(l);
+}
+
 void test_yield_from_lua_code(void* handle) {
     CreateLuaInstanceFuncType create_func =
         must_load_function(handle, "lua_create_instance");
@@ -190,6 +220,8 @@ int main(int argc, char* argv[]) {
     argv += optind;
 
     run_lua_test_code(handle, n);
+
+    test_invalid_lua_code(handle);
 
     test_yield_from_lua_code(handle);
 }

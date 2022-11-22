@@ -90,6 +90,11 @@ static int check_status_and_top_of_stack(lua_State *L, int status) {
         l_message(progname, msg);
         lua_pop(L, 1); /* remove message */
     }
+    // Return negative number to distinguish between lua interpreter error and
+    // user supplied return code.
+    if (status > 0) {
+        status = -status;
+    }
     return status;
 }
 
@@ -465,7 +470,7 @@ int main(int argc, char **argv) {
     result = lua_tointeger(L, -1);
     lua_close(L);
     // Use negative number to represent lua interpreter error.
-    if (status != LUA_OK) {
+    if (status > 0) {
         return -status;
     }
     return result;
