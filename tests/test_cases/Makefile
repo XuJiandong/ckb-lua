@@ -57,7 +57,7 @@ dylibtest:
 	# Test if exits successfully
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep 'Run result: 0'
 	# Test whether we can call exit when exit is enabled
-	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep -v 'Unexpected return from evaluating lua code'
+	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep -v 'Code after yielding should be unreachable'
 	# Test if we can print hello world
 	RUST_LOG=debug $(CKB-DEBUGGER) --max-cycles $(MAX-CYCLES) --tx-file dylib.json --script-group-type=type --cell-index=0 --cell-type=output --bin ../../build/dylibtest -- 2>&1 | fgrep 'hello world'
 	# Run lua code many times to ensure no memory leak.

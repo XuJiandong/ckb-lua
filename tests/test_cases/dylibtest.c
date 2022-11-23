@@ -195,9 +195,15 @@ void test_yield_from_lua_code(void* handle) {
         printf("creating lua instance failed\n");
         ckb_exit(-1);
     }
-    const char* code = "ckb.yield(42)";
+    const char* code =
+        "local function yield()\n"
+        "  print('Prepared to yield')\n"
+        "  ckb.yield(42)\n"
+        "  print('Code after yielding should be unreachable')\n"
+        "end\n"
+        "yield()";
     size_t code_size = strlen(code);
-    int ret = evaluate_func(l, code, code_size, "test");
+    int ret = evaluate_func(l, code, code_size, "yield test");
     if (ret != 42) {
         close_func(l);
         printf("evaluating lua code failed: returned %d, expecting 42\n", ret);
@@ -247,6 +253,7 @@ void test_exit(void* handle) {
     ret = evaluate_func(l, code, code_size, "exit enabled");
 
     // Below should never run, as the whole vm exited.
+    printf("Code after yielding should be unreachable\n");
     printf("Unexpected return from evaluating lua code, return code %d", ret);
     close_func(l);
 }
