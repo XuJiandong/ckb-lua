@@ -513,3 +513,11 @@ __attribute__((visibility("default"))) void lua_close_instance(void *L) {
     }
     lua_close((lua_State *)L);
 }
+
+__attribute__((visibility("default"))) void lua_toggle_exit(void *L,
+                                                            int enabled) {
+    if (L == NULL) {
+        ckb_exit(LUA_ERROR_INVALID_STATE);
+    }
+    s_lua_exit_enabled = enabled;
+}

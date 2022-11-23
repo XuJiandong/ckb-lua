@@ -64,6 +64,7 @@ Three functions have been exported in the shared library.
 1. `void *lua_create_instance(uintptr_t min, uintptr_t max)`
 2. `int lua_run_code(void *l, const char *code, size_t code_size, char *name)`
 3. `void close_lua_instance(void *L)`
+4. `void lua_toggle_exit(void *L, int enabled)`
 
 ### `lua_create_instance`
 
@@ -76,6 +77,10 @@ The actual evaluation of Lua code can be initiated by calling `lua_run_code`. Bo
 ### `lua_close_instance`
 
 Calling `lua_close_instance` will release all the resources used by Lua. It takes the opaque pointer returned from `lua_create_instance` as a parameter.
+
+### `lua_toggle_exit`
+
+`lua_toggle_exit` can be used to toggle whether `ckb.exit` is enabled. Since `ckb.exit(code)` can stop the execution of the whole VM and return `code` to ckb-vm. It may be undesirable in some situation. By default, we have disabled it. Users may call `lua_toggle_exit(l, 1)` to enable it (here parameter `l` is the lua instance).
 
 ## Lua Functions
 

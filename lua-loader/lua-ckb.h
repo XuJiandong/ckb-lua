@@ -11,4 +11,6 @@
 #define LUA_ERROR_INVALID_STATE 105
 
 const char *CKB_RETURN_CODE_KEY = "_ckb_return_code";
+
+static int s_lua_exit_enabled = 0;
 #endif

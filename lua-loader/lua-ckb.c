@@ -402,8 +402,12 @@ int lua_get_int_code(lua_State *L) {
 }
 
 int lua_ckb_exit(lua_State *L) {
-    int code = lua_get_int_code(L);
-    ckb_exit(code);
+    if (s_lua_exit_enabled) {
+        int code = lua_get_int_code(L);
+        ckb_exit(code);
+    } else {
+        luaL_error(L, "exit in ckb-lua is not enabled");
+    }
     return 0;
 }
 

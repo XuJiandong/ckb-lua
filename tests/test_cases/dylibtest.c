@@ -104,6 +104,7 @@ typedef void* (*CreateLuaInstanceFuncType)(uintptr_t min, uintptr_t max);
 typedef int (*EvaluateLuaCodeFuncType)(void* l, const char* code,
                                        size_t code_size, char* name);
 typedef void (*CloseLuaInstanceFuncType)(void* l);
+typedef void (*ToggleExitFuncType)(void* l, int enabled);
 
 void run_lua_test_code(void* handle, int n) {
     CreateLuaInstanceFuncType create_func =
@@ -112,6 +113,8 @@ void run_lua_test_code(void* handle, int n) {
         must_load_function(handle, "lua_run_code");
     CloseLuaInstanceFuncType close_func =
         must_load_function(handle, "lua_close_instance");
+
+    printf("Running test %s\n", __func__);
 
     const size_t mem_size = 1024 * 512;
     uint8_t mem[mem_size];
@@ -150,6 +153,8 @@ void test_invalid_lua_code(void* handle) {
     CloseLuaInstanceFuncType close_func =
         must_load_function(handle, "lua_close_instance");
 
+    printf("Running test %s\n", __func__);
+
     const size_t mem_size = 1024 * 512;
     uint8_t mem[mem_size];
 
@@ -180,6 +185,8 @@ void test_yield_from_lua_code(void* handle) {
     CloseLuaInstanceFuncType close_func =
         must_load_function(handle, "lua_close_instance");
 
+    printf("Running test %s\n", __func__);
+
     const size_t mem_size = 1024 * 512;
     uint8_t mem[mem_size];
 
@@ -196,6 +203,51 @@ void test_yield_from_lua_code(void* handle) {
         printf("evaluating lua code failed: returned %d, expecting 42\n", ret);
         ckb_exit(-1);
     }
+    close_func(l);
+}
+
+void test_exit(void* handle) {
+    CreateLuaInstanceFuncType create_func =
+        must_load_function(handle, "lua_create_instance");
+    EvaluateLuaCodeFuncType evaluate_func =
+        must_load_function(handle, "lua_run_code");
+    CloseLuaInstanceFuncType close_func =
+        must_load_function(handle, "lua_close_instance");
+    ToggleExitFuncType toggle_exit_func =
+        must_load_function(handle, "lua_toggle_exit");
+
+    printf("Running test %s\n", __func__);
+
+    const size_t mem_size = 1024 * 512;
+    uint8_t mem[mem_size];
+
+    void* l = create_func((uintptr_t)mem, (uintptr_t)(mem + mem_size));
+    if (l == NULL) {
+        printf("creating lua instance failed\n");
+        ckb_exit(-1);
+    }
+    const char* code = "ckb.exit(0)";
+    size_t code_size = strlen(code);
+    int ret = evaluate_func(l, code, code_size, "exit not enabled");
+    printf(
+        "evaluating lua code returned %d, expecting negative number as "
+        "exit is not enabled\n",
+        ret);
+    if (ret >= 0) {
+        close_func(l);
+        printf(
+            "evaluating lua code returned %d, expecting negative "
+            "number as exit is not enabled\n",
+            ret);
+        ckb_exit(-1);
+    }
+    printf("before toggle exit func: returned %d", ret);
+    toggle_exit_func(l, 1);
+    printf("after toggle exit func");
+    ret = evaluate_func(l, code, code_size, "exit enabled");
+
+    // Below should never run, as the whole vm exited.
+    printf("Unexpected return from evaluating lua code, return code %d", ret);
     close_func(l);
 }
 
@@ -224,4 +276,7 @@ int main(int argc, char* argv[]) {
     test_invalid_lua_code(handle);
 
     test_yield_from_lua_code(handle);
+
+    // Must be the last test to run, as it will stop the execution.
+    test_exit(handle);
 }
