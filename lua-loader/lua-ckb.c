@@ -411,7 +411,7 @@ int lua_ckb_exit(lua_State *L) {
     return 0;
 }
 
-int lua_ckb_yield(lua_State *L) {
+int lua_ckb_exit_script(lua_State *L) {
     int code = lua_get_int_code(L);
     lua_createtable(L, 0, 1);
     lua_pushstring(L, CKB_RETURN_CODE_KEY);
@@ -522,7 +522,7 @@ int lua_ckb_load_header_by_field(lua_State *L) {
 static const luaL_Reg ckb_syscall[] = {
     {"dump", lua_ckb_dump},
     {"exit", lua_ckb_exit},
-    {"yield", lua_ckb_yield}, /* return is a key word in Lua */
+    {"exit_script", lua_ckb_exit_script},
     {"debug", lua_ckb_debug},
     {"load_tx_hash", lua_ckb_load_tx_hash},
     {"load_script_hash", lua_ckb_load_script_hash},

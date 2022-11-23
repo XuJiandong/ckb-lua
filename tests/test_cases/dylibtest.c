@@ -165,7 +165,7 @@ void test_invalid_lua_code(void* handle) {
     }
     const char* code = "invalid lua code here";
     size_t code_size = strlen(code);
-    int ret = evaluate_func(l, code, code_size, "test");
+    int ret = evaluate_func(l, code, code_size, "invalid lua code test");
     if (ret >= 0) {
         close_func(l);
         printf(
@@ -177,7 +177,7 @@ void test_invalid_lua_code(void* handle) {
     close_func(l);
 }
 
-void test_yield_from_lua_code(void* handle) {
+void test_exit_script(void* handle) {
     CreateLuaInstanceFuncType create_func =
         must_load_function(handle, "lua_create_instance");
     EvaluateLuaCodeFuncType evaluate_func =
@@ -196,14 +196,14 @@ void test_yield_from_lua_code(void* handle) {
         ckb_exit(-1);
     }
     const char* code =
-        "local function yield()\n"
-        "  print('Prepared to yield')\n"
-        "  ckb.yield(42)\n"
-        "  print('Code after yielding should be unreachable')\n"
+        "local function exit_script()\n"
+        "  print('Prepared to exit script')\n"
+        "  ckb.exit_script(42)\n"
+        "  print('Code after exit_script should be unreachable')\n"
         "end\n"
-        "yield()";
+        "exit_script()";
     size_t code_size = strlen(code);
-    int ret = evaluate_func(l, code, code_size, "yield test");
+    int ret = evaluate_func(l, code, code_size, "exit_script test");
     if (ret != 42) {
         close_func(l);
         printf("evaluating lua code failed: returned %d, expecting 42\n", ret);
@@ -235,10 +235,6 @@ void test_exit(void* handle) {
     const char* code = "ckb.exit(0)";
     size_t code_size = strlen(code);
     int ret = evaluate_func(l, code, code_size, "exit not enabled");
-    printf(
-        "evaluating lua code returned %d, expecting negative number as "
-        "exit is not enabled\n",
-        ret);
     if (ret >= 0) {
         close_func(l);
         printf(
@@ -253,7 +249,7 @@ void test_exit(void* handle) {
     ret = evaluate_func(l, code, code_size, "exit enabled");
 
     // Below should never run, as the whole vm exited.
-    printf("Code after yielding should be unreachable\n");
+    printf("Code after exit_script should be unreachable\n");
     printf("Unexpected return from evaluating lua code, return code %d", ret);
     close_func(l);
 }
@@ -282,7 +278,7 @@ int main(int argc, char* argv[]) {
 
     test_invalid_lua_code(handle);
 
-    test_yield_from_lua_code(handle);
+    test_exit_script(handle);
 
     // Must be the last test to run, as it will stop the execution.
     test_exit(handle);

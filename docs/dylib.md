@@ -72,7 +72,7 @@ To create new Lua instance, we may use `lua_create_instance`. In order to avoid 
 
 ### `lua_run_code`
 
-The actual evaluation of Lua code can be initiated by calling `lua_run_code`. Both Lua source code and binary code are acceptable to `lua_run_code`. Evaluating binary code can be less resource-hungry both in terms of the cycles needed to run the code and the storage space required to store the code. It takes four arguments. The first one `l` is the opaque pointer returned from `lua_create_instance`, the second one `code` is a pointer which points to the code buffer, which can be either Lua source code or Lua bytecode. The third one `code_size` is the size of the `code` buffer. The last one `name` is the name of the Lua program. This may be helpful in debugging. The lua script may early return control to the host program by calling `ckb.yield(code)`. In this case, the return code of this function is the parameter `code`. If no `ckb.yield` is called, 0 will be returned if lua script is executed successfully, otherwise a negative number will be returned. Lua script should pass non-negative number to `ckb.yield` in order to distinguish lua interpreter error and delibrately set return code.
+The actual evaluation of Lua code can be initiated by calling `lua_run_code`. Both Lua source code and binary code are acceptable to `lua_run_code`. Evaluating binary code can be less resource-hungry both in terms of the cycles needed to run the code and the storage space required to store the code. It takes four arguments. The first one `l` is the opaque pointer returned from `lua_create_instance`, the second one `code` is a pointer which points to the code buffer, which can be either Lua source code or Lua bytecode. The third one `code_size` is the size of the `code` buffer. The last one `name` is the name of the Lua program. This may be helpful in debugging. The lua script may early return control to the host program by calling `ckb.exit_script(code)`. In this case, the return code of this function is the parameter `code`. If no `ckb.exit_script` is called, 0 will be returned if lua script is executed successfully, otherwise a negative number will be returned. Lua script should pass non-negative number to `ckb.exit_script` in order to distinguish lua interpreter error and delibrately set return code.
 
 ### `lua_close_instance`
 
@@ -86,7 +86,7 @@ Calling `lua_close_instance` will release all the resources used by Lua. It take
 
 ### Functions in Lua Standard Library
 
-Most of the functions in Lua standard library have been ported to ckb-lua. You can expect all the platform-independent functions to work. But some platform-dependent functions like `os.rename` (removing a file from the file system) will not exist in ckb-lua.
+Most of the functions in Lua standard library have been ported to ckb-lua. You can expect all the platform-independent functions to work. But some platform-dependent functions (e.g. all functions in the module `os`) are not provided in ckb-lua.
 
 TODO: add list of functions that are not available in ckb-lua.
 
@@ -192,7 +192,7 @@ description: exit the ckb-vm execution
 
 calling example: `ckb.exit(code)`
 
-arguments: code (return code)
+arguments: code (exit code)
 
 return values: none
 
@@ -200,16 +200,16 @@ side effects: exit the ckb-vm execution
 
 see also: [`ckb_exit` syscall](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0009-vm-syscalls/0009-vm-syscalls.md#exit)
 
-#### `ckb.yield`
-description: stop lua execution, return to the ckb-vm caller
+#### `ckb.exit_script`
+description: stop lua script execution, return to the ckb-vm caller
 
-calling example: `ckb.yield(code)`
+calling example: `ckb.exit_script(code)`
 
-arguments: code (return code)
+arguments: code (this will be the return code of `lua_run_code`, should be positive, see `lua_run_code` above for details)
 
 return values: none
 
-side effects: stop lua execution, return to the ckb-vm caller
+side effects: stop lua script execution, return to the ckb-vm caller
 
 #### `ckb.load_tx_hash`
 description: load the transaction hash
