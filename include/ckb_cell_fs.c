@@ -34,6 +34,7 @@ int get_file(const CellFileSystem *fs, const char *filename, FSFile **f) {
         cfs = cfs->next;
         node = cfs->current;
     }
+    free(file);
     return -1;
 }
 
@@ -54,6 +55,7 @@ int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen) {
 
     CellFileSystem *newfs = (CellFileSystem *)malloc(sizeof(CellFileSystem));
     if (newfs == NULL) {
+        free(node);
         return -1;
     }
 
@@ -69,6 +71,8 @@ int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen) {
 
     node->files = (FSEntry *)malloc(sizeof(FSEntry) * node->count);
     if (node->files == NULL) {
+        free(node);
+        free(newfs);
         return -1;
     }
     node->start = buf + sizeof(node->count) + (sizeof(FSEntry) * node->count);

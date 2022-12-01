@@ -433,6 +433,7 @@ int ckb_load_fs_from_source_and_index(uint64_t source, uint64_t index) {
     }
     ret = ckb_load_cell_data(buf, &buflen, 0, index, source);
     if (ret) {
+        free(buf);
         return ret;
     }
     return ckb_load_fs(buf, buflen);
