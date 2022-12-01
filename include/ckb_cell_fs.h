@@ -40,4 +40,6 @@ int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen);
 
 int ckb_load_fs(void *buf, uint64_t buflen);
 
+void ckb_reset_fs();
+
 #endif

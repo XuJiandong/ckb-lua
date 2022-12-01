@@ -94,3 +94,5 @@ int ckb_load_fs(void *buf, uint64_t buflen) {
     int ret = load_fs(&CELL_FILE_SYSTEM, buf, buflen);
     return ret;
 }
+
+void ckb_reset_fs() { CELL_FILE_SYSTEM = NULL; }
