@@ -444,8 +444,12 @@ int lua_ckb_mount(lua_State *L) {
     int source = fields[0].arg.integer;
     int index = fields[1].arg.integer;
     int ret = ckb_load_fs_from_source_and_index(source, index);
-    lua_pushinteger(L, ret);
-    return 0;
+    if (ret != 0) {
+        lua_pushinteger(L, ret);
+        return 1;
+    }
+    lua_pushnil(L);
+    return 1;
 }
 
 int lua_ckb_debug(lua_State *L) {
