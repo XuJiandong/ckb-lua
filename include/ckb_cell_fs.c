@@ -41,11 +41,6 @@ int ckb_get_file(const char *filename, FSFile **file) {
     return get_file(CELL_FILE_SYSTEM, filename, file);
 }
 
-void prepend_node_to_fs(CellFileSystemNode *node, CellFileSystem *fs) {
-    fs->next = fs;
-    fs->current = node;
-}
-
 int load_fs(CellFileSystem **fs, void *buf, uint64_t buflen) {
     if (fs == NULL || buf == NULL) {
         return -1;
